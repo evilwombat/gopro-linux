@@ -733,6 +733,9 @@ static struct dentry *vfat_lookup(struct inode *dir, struct dentry *dentry,
 	struct inode *inode;
 	struct dentry *alias;
 	int err;
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	int num=is_dir_support_del(dir);
+#endif
 
 	lock_super(sb);
 
@@ -770,6 +773,13 @@ static struct dentry *vfat_lookup(struct inode *dir, struct dentry *dentry,
 	} else
 		dput(alias);
 
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+ 	if(num>=0)
+ 	{
+ 		add_del_file(inode,dir,num);
+ 	}
+#endif
+
 out:
 	unlock_super(sb);
 	dentry->d_time = dentry->d_parent->d_inode->i_version;
@@ -791,6 +801,9 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, int mode,
 	struct fat_slot_info sinfo;
 	struct timespec ts;
 	int err;
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	int num=is_dir_support_del(dir);
+#endif
 
 	lock_super(sb);
 
@@ -812,6 +825,14 @@ static int vfat_create(struct inode *dir, struct dentry *dentry, int mode,
 
 	dentry->d_time = dentry->d_parent->d_inode->i_version;
 	d_instantiate(dentry, inode);
+
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	if(num>=0)
+	{
+		add_del_file(inode,dir,num);
+	}
+#endif
+
 out:
 	unlock_super(sb);
 	return err;
@@ -842,6 +863,15 @@ static int vfat_rmdir(struct inode *dir, struct dentry *dentry)
 	inode->i_mtime = inode->i_atime = CURRENT_TIME_SEC;
 	fat_detach(inode);
 out:
+
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	if(is_dir_support_del(inode)>=0)
+	{
+		del_del_dir(inode);
+		iput(inode);
+	}
+#endif
+
 	unlock_super(sb);
 
 	return err;
@@ -853,6 +883,14 @@ static int vfat_unlink(struct inode *dir, struct dentry *dentry)
 	struct super_block *sb = dir->i_sb;
 	struct fat_slot_info sinfo;
 	int err;
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	int num=is_dir_support_del(dir);
+
+	if(num>=0)
+	{
+		del_del_file(inode,num);
+	}
+#endif
 
 	lock_super(sb);
 

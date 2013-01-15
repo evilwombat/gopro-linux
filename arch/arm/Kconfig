@@ -127,7 +127,7 @@ config GENERIC_IRQ_PROBE
 config GENERIC_LOCKBREAK
 	bool
 	default y
-	depends on SMP && PREEMPT
+	depends on SMP && PREEMPT && !ARCH_AMBARELLA
 
 config RWSEM_GENERIC_SPINLOCK
 	bool
@@ -220,6 +220,12 @@ config ARCH_AAEC2000
 	select ARCH_USES_GETTIMEOFFSET
 	help
 	  This enables support for systems based on the Agilent AAEC-2000
+
+config ARCH_AMBARELLA
+	bool "Ambarella"
+	depends on MMU
+	help
+	  Support for Ambarella Media Processor.
 
 config ARCH_INTEGRATOR
 	bool "ARM Ltd. Integrator family"
@@ -884,6 +890,9 @@ endchoice
 #
 source "arch/arm/mach-aaec2000/Kconfig"
 
+source "arch/arm/plat-ambarella/Kconfig"
+source "arch/arm/mach-ambarella/Kconfig"
+
 source "arch/arm/mach-at91/Kconfig"
 
 source "arch/arm/mach-bcmring/Kconfig"
@@ -1140,7 +1149,7 @@ config ARM_ERRATA_742231
 
 config PL310_ERRATA_588369
 	bool "Clean & Invalidate maintenance operations do not invalidate clean lines"
-	depends on CACHE_L2X0 && ARCH_OMAP4
+	depends on CACHE_L2X0
 	help
 	   The PL310 L2 cache controller implements three types of Clean &
 	   Invalidate maintenance operations: by Physical Address
@@ -1149,8 +1158,7 @@ config PL310_ERRATA_588369
 	   clean operation followed immediately by an invalidate operation,
 	   both performing to the same memory location. This functionality
 	   is not correctly implemented in PL310 as clean lines are not
-	   invalidated as a result of these operations. Note that this errata
-	   uses Texas Instrument's secure monitor api.
+	   invalidated as a result of these operations.
 
 config ARM_ERRATA_720789
 	bool "ARM errata: TLBIASIDIS and TLBIMVAIS operations can broadcast a faulty ASID"
@@ -1201,6 +1209,28 @@ config ARM_ERRATA_753970
 	  by another offset targeting an unmapped PL310 register 0x740.
 	  This has the same effect as the cache sync operation: store buffer
 	  drain and waiting for all buffers empty.
+
+config ARM_ERRATA_754322
+	bool "ARM errata: possible faulty MMU translations following an ASID switch"
+	depends on CPU_V7
+	help
+	  This option enables the workaround for the 754322 Cortex-A9 (r2p*,
+	  r3p*) erratum. A speculative memory access may cause a page table walk
+	  which starts prior to an ASID switch but completes afterwards. This
+	  can populate the micro-TLB with a stale entry which may be hit with
+	  the new ASID. This workaround places two dsb instructions in the mm
+	  switching code so that no page table walks can cross the ASID switch.
+
+config PL310_ERRATA_727915
+	bool "Background Clean & Invalidate by Way operation can cause data corruption"
+	depends on CACHE_L2X0
+	help
+	  PL310 implements the Clean & Invalidate by Way L2 cache maintenance
+	  operation (offset 0x7FC). This operation runs in background so that
+	  PL310 can handle normal accesses while it is in progress. Under very
+	  rare circumstances, due to this erratum, write data can be lost when
+	  PL310 treats a cacheable write transaction during a Clean &
+	  Invalidate by Way operation.
 
 endmenu
 
@@ -1277,6 +1307,7 @@ config SMP
 	depends on EXPERIMENTAL
 	depends on GENERIC_CLOCKEVENTS
 	depends on REALVIEW_EB_ARM11MP || REALVIEW_EB_A9MP || \
+		 PLAT_AMBARELLA_CORTEX || \
 		 MACH_REALVIEW_PB11MP || MACH_REALVIEW_PBX || ARCH_OMAP4 || \
 		 ARCH_S5PV310 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || \
 		 ARCH_MSM_SCORPIONMP || ARCH_SHMOBILE
@@ -1382,6 +1413,7 @@ config HZ
 	default OMAP_32K_TIMER_HZ if ARCH_OMAP && OMAP_32K_TIMER
 	default AT91_TIMER_HZ if ARCH_AT91
 	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE
+	default AMBARELLA_TIMER_HZ if PLAT_AMBARELLA
 	default 100
 
 config THUMB2_KERNEL
@@ -1922,6 +1954,9 @@ menu "Power management options"
 source "kernel/power/Kconfig"
 
 config ARCH_SUSPEND_POSSIBLE
+	def_bool y
+
+config ARCH_HIBERNATION_POSSIBLE
 	def_bool y
 
 endmenu

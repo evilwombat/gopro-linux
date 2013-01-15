@@ -35,6 +35,13 @@
 #ifndef _AHCI_H
 #define _AHCI_H
 
+#if defined(CONFIG_PLAT_AMBARELLA_ADD_REGISTER_LOCK)
+#undef writel
+#undef readl
+#define writel(v, p)		amba_writel(p, v)
+#define readl(p)		amba_readl(p)
+#endif
+
 #include <linux/libata.h>
 
 /* Enclosure Management Control */

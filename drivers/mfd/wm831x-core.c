@@ -1489,7 +1489,8 @@ int wm831x_device_init(struct wm831x *wm831x, unsigned long id, int irq)
 	switch (ret) {
 	case WM8310:
 		parent = WM8310;
-		wm831x->num_gpio = 16;
+		/* i1 specific: we only use 9 gpio out of 12 valid (not 16)*/
+		wm831x->num_gpio = 9;
 		wm831x->charger_irq_wake = 1;
 		if (rev > 0) {
 			wm831x->has_gpio_ena = 1;
@@ -1706,7 +1707,8 @@ int wm831x_device_suspend(struct wm831x *wm831x)
 					 reg & mask);
 		}
 	}
-
+	//disable wm831x irq
+	disable_irq(wm831x->irq);
 	return 0;
 }
 

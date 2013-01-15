@@ -98,3 +98,10 @@ config FAT_DEFAULT_IOCHARSET
 
 	  Enable any character sets you need in File Systems/Native Language
 	  Support.
+
+config FAT_AMBARELLA_IMPROVEMENT
+	bool "Ambarella FAT improved functions"
+	depends on MSDOS_FS || VFAT_FS
+	help
+	  This option enables Ambarella's improved FAT functions.
+

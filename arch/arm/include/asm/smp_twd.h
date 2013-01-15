@@ -24,5 +24,7 @@ extern void __iomem *twd_base;
 
 int twd_timer_ack(void);
 void twd_timer_setup(struct clock_event_device *);
+void twd_timer_setup_rate(struct clock_event_device *clk, u32 timer_rate);
+void twd_timer_update_rate(struct clock_event_device *clk, u32 timer_rate);
 
 #endif

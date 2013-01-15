@@ -53,6 +53,12 @@ static int hibernation_mode = HIBERNATION_SHUTDOWN;
 
 static const struct platform_hibernation_ops *hibernation_ops;
 
+#ifdef CONFIG_BOSS_SINGLE_CORE
+extern int ubi_attach_mtd_dev(struct mtd_info *mtd, int ubi_num, int vid_hdr_offset);
+extern int ubi_detach_mtd_dev(int ubi_num, int anyway);
+extern struct mtd_info *get_mtd_device_nm(const char *name);
+#endif
+
 /**
  * hibernation_set_ops - set the global hibernate operations
  * @ops: the hibernation operations to use in subsequent hibernation transitions
@@ -288,6 +294,14 @@ static int create_image(int platform_mode)
 		printk(KERN_ERR "PM: Error %d creating hibernation image\n",
 			error);
 	/* Restore control flow magically appears here */
+#if defined(CONFIG_ARCH_HAS_SWSUSP_WRITE)
+	if (in_suspend) {
+		error = arch_swsusp_write(0);
+		if (error)
+			printk(KERN_ERR "PM: Error %d writing "
+				"arch hibernation image\n", error);
+	}
+#endif
 	restore_processor_state();
 	if (!in_suspend) {
 		events_check_enabled = false;
@@ -587,15 +601,22 @@ static int prepare_processes(void)
 	}
 	return error;
 }
-
+#ifdef CONFIG_PLAT_AMBARELLA_BOSS
+extern u32 ipc_svc_wait_for_completion(void);
+#endif
 /**
  *	hibernate - The granpappy of the built-in hibernation management
  */
-
 int hibernate(void)
 {
 	int error;
-
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	struct mtd_info *mtd;
+#endif
+#ifdef CONFIG_PLAT_AMBARELLA_BOSS
+	if (0 != ipc_svc_wait_for_completion())
+		return -EBUSY;
+#endif
 	mutex_lock(&pm_mutex);
 	/* The snapshot device should not be opened while we're running */
 	if (!atomic_add_unless(&snapshot_device_available, -1, 0)) {
@@ -655,6 +676,21 @@ int hibernate(void)
 
  Thaw:
 	thaw_processes();
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	/**
+	 * Re-attach lnx to ubi0
+	 *   When hibernation image was pre-burned at MP (will never update)
+	 *   we will need to update the ubi subsystem in-memory mappings,
+	 *   else the UBIFS will be corrupted if the filesystem is not read-only
+	 * WANRNING: force re-attach a mounted filesystem is dangerous,
+	 *   so we must do it before starting access the filesystem
+	 */
+	if ( !ubi_detach_mtd_dev(0,1) ) {
+		mtd = get_mtd_device_nm("lnx");
+		ubi_attach_mtd_dev(mtd, 0, 0);
+	}
+#endif
+
  Finish:
 	free_basic_memory_bitmaps();
 	usermodehelper_enable();

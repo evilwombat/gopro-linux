@@ -47,6 +47,20 @@
 #define WM831X_USB_ILIM_MASK                    0x0007  /* USB_ILIM - [2:0] */
 #define WM831X_USB_ILIM_SHIFT                        0  /* USB_ILIM - [2:0] */
 #define WM831X_USB_ILIM_WIDTH                        3  /* USB_ILIM - [2:0] */
+#define WM831X_USB_ILIM_500MA	3
+
+/*
+ * R16390 (0x4006) - Reset Control (but have some FET config bit)
+ */
+#define WM831X_WALL_FET_ENA_DRV_STR	0x2000 /* WALL_FET_ENA_DRV_STR */
+#define WM831X_WALL_FET_ENA_DRV_STR_MASK	0x2000  /* WALL_FET_ENA_DRV_STR */
+#define WM831X_WALL_FET_ENA_DRV_STR_SHIFT	13  /* WALL_FET_ENA_DRV_STR */
+#define WM831X_WALL_FET_ENA_DRV_STR_WIDTH	1  /* WALL_FET_ENA_DRV_STR */
+#define WM831X_BATT_FET_ENA	0x1000	/* BATT_FET_ENA */
+#define WM831X_BATT_FET_ENA_MASK	0x1000	/* BATT_FET_ENA */
+#define WM831X_BATT_FET_ENA_SHIFT	12	/* BATT_FET_ENA */
+#define WM831X_BATT_FET_ENA_WIDTH	1	/* BATT_FET_ENA */
+
 
 /*
  * R16397 (0x400D) - System Status

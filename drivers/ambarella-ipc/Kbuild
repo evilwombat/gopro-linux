@@ -1,0 +1,10 @@
+ifeq ($(AMBARELLA_IPCDEF),)
+AMBARELLA_IPCDEF = ../ipcdef
+export AMBARELLA_IPCDEF
+endif
+
+ifneq ($(wildcard $(AMBARELLA_IPCDEF)/aipchelper.mk),)
+include $(src)/Makefile_br
+else
+include $(src)/Makefile
+endif

@@ -120,11 +120,49 @@ long fat_generic_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct inode *inode = filp->f_path.dentry->d_inode;
 	u32 __user *user_attr = (u32 __user *)arg;
 
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	static int mid_fclus,mid_dclus;
+	static int new_fclus,new_dclus;
+	static int first_fclus,first_dclus;
+	static int last_fclus,last_dclus;
+	struct fat_entry fatent;
+#endif
+
 	switch (cmd) {
 	case FAT_IOCTL_GET_ATTRIBUTES:
 		return fat_ioctl_get_attributes(inode, user_attr);
 	case FAT_IOCTL_SET_ATTRIBUTES:
 		return fat_ioctl_set_attributes(filp, user_attr);
+
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	case FAT_IOCTL_RECORD_POS:
+		fat_get_cluster(inode, FAT_ENT_EOF, &mid_fclus, &mid_dclus);
+		return 0;
+
+	case FAT_IOCTL_LOGIC_MOVE:
+
+		fatent_init(&fatent);
+
+		fat_get_cluster(inode, FAT_ENT_EOF, &last_fclus, &last_dclus);
+		fat_get_cluster(inode, 0, &first_fclus, &first_dclus);
+		fat_get_cluster(inode, mid_fclus+1, &new_fclus, &new_dclus);
+
+		fat_ent_read(inode, &fatent, mid_dclus);
+		fat_ent_write(inode, &fatent,FAT_ENT_EOF, 1);
+
+		fat_ent_read(inode, &fatent, last_dclus);
+		fat_ent_write(inode, &fatent,first_dclus, 1);
+
+		MSDOS_I(inode)->i_start=new_dclus;
+		MSDOS_I(inode)->i_logstart=new_dclus;
+
+		fat_sync_inode(inode);
+		fat_cache_inval_inode(inode);
+		write_inode_now(inode, 1);
+		invalidate_inode_pages2(inode->i_mapping);
+		return 0;
+#endif
+
 	default:
 		return -ENOTTY;	/* Inappropriate ioctl for device */
 	}

@@ -796,6 +796,19 @@ static void __init squash_mem_tags(struct tag *tag)
 			tag->hdr.tag = ATAG_NONE;
 }
 
+#ifdef CONFIG_BOSS_SINGLE_CORE
+
+static inline u32 read_tlb_base(void)
+{
+       u32 u;
+
+	__asm__("mrc p15, 0, %0, c2, c0, 0" : "=r" (u));
+
+       return u;
+}
+
+#endif	/* CONFIG_BOSS_SINGLE_CORE */
+
 void __init setup_arch(char **cmdline_p)
 {
 	struct tag *tags = (struct tag *)&init_tags;
@@ -842,7 +855,9 @@ void __init setup_arch(char **cmdline_p)
 	init_mm.end_code   = (unsigned long) _etext;
 	init_mm.end_data   = (unsigned long) _edata;
 	init_mm.brk	   = (unsigned long) _end;
-
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	init_mm.pgd	   = (pgd_t *)read_tlb_base();
+#endif
 	/* parse_early_param needs a boot_command_line */
 	strlcpy(boot_command_line, from, COMMAND_LINE_SIZE);
 

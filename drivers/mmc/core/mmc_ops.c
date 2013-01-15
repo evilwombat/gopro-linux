@@ -48,6 +48,11 @@ static int _mmc_select_card(struct mmc_host *host, struct mmc_card *card)
 
 int mmc_select_card(struct mmc_card *card)
 {
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->is_init && sdinfo->from_ipc)
+		return 0;
+#endif
 	BUG_ON(!card);
 
 	return _mmc_select_card(card->host, card);
@@ -119,8 +124,18 @@ int mmc_go_idle(struct mmc_host *host)
 	cmd.arg = 0;
 	cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_NONE | MMC_CMD_BC;
 
-	err = mmc_wait_for_cmd(host, &cmd, 0);
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+{
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(host);
+	if (sdinfo->from_ipc && !sdinfo->is_sdio) {
+		err = 0;
+	} else
+		err = mmc_wait_for_cmd(host, &cmd, 0);
+}
+#else
 
+	err = mmc_wait_for_cmd(host, &cmd, 0);
+#endif
 	mmc_delay(1);
 
 	if (!mmc_host_is_spi(host)) {
@@ -138,6 +153,14 @@ int mmc_send_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 	struct mmc_command cmd;
 	int i, err = 0;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(host);
+	if (sdinfo->from_ipc && sdinfo->is_mmc) {
+		if (rocr)
+			*rocr = sdinfo->ocr;
+		return 0;
+	}
+#endif
 	BUG_ON(!host);
 
 	memset(&cmd, 0, sizeof(struct mmc_command));
@@ -189,7 +212,15 @@ int mmc_all_send_cid(struct mmc_host *host, u32 *cid)
 	cmd.arg = 0;
 	cmd.flags = MMC_RSP_R2 | MMC_CMD_BCR;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	if (ambarella_sdmmc_cmd_ipc(host, &cmd) == 0) {
+		err = cmd.error;
+	} else {
+		err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
+	}
+#else
 	err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
+#endif
 	if (err)
 		return err;
 
@@ -202,6 +233,15 @@ int mmc_set_relative_addr(struct mmc_card *card)
 {
 	int err;
 	struct mmc_command cmd;
+
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->from_ipc && sdinfo->is_mmc) {
+		if (card->rca != sdinfo->rca)
+			card->rca = sdinfo->rca;
+		return 0;
+	}
+#endif
 
 	BUG_ON(!card);
 	BUG_ON(!card->host);
@@ -234,7 +274,15 @@ mmc_send_cxd_native(struct mmc_host *host, u32 arg, u32 *cxd, int opcode)
 	cmd.arg = arg;
 	cmd.flags = MMC_RSP_R2 | MMC_CMD_AC;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	if (ambarella_sdmmc_cmd_ipc(host, &cmd) == 0) {
+		err = cmd.error;
+	} else {
+		err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
+	}
+#else
 	err = mmc_wait_for_cmd(host, &cmd, MMC_CMD_RETRIES);
+#endif
 	if (err)
 		return err;
 
@@ -295,7 +343,16 @@ mmc_send_cxd_data(struct mmc_card *card, struct mmc_host *host,
 	} else
 		mmc_set_data_timeout(&data, card);
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	data.buf = data_buf;
+	cmd.data = &data;
+	if (ambarella_sdmmc_cmd_ipc(host, &cmd) == 0) {
+	} else {
+		mmc_wait_for_req(host, &mrq);
+	}
+#else
 	mmc_wait_for_req(host, &mrq);
+#endif
 
 	memcpy(buf, data_buf, len);
 	kfree(data_buf);
@@ -393,6 +450,11 @@ int mmc_switch(struct mmc_card *card, u8 set, u8 index, u8 value)
 	struct mmc_command cmd;
 	u32 status;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->is_init)
+		return 0;
+#endif
 	BUG_ON(!card);
 	BUG_ON(!card->host);
 
@@ -476,6 +538,17 @@ mmc_send_bus_test(struct mmc_card *card, struct mmc_host *host, u8 opcode,
 	static u8 testdata_8bit[8] = { 0x55, 0xaa, 0, 0, 0, 0, 0, 0 };
 	static u8 testdata_4bit[4] = { 0x5a, 0, 0, 0 };
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	memset(&cmd, 0, sizeof(struct mmc_command));
+	cmd.opcode = opcode;
+	cmd.arg = len;
+
+	if (ambarella_sdmmc_cmd_ipc(host, &cmd) == 0) {
+		if (cmd.error)
+			return cmd.error;
+	}
+#endif
+
 	/* dma onto stack is unsafe/nonportable, but callers to this
 	 * routine normally provide temporary on-stack buffers ...
 	 */
@@ -546,6 +619,16 @@ int mmc_bus_test(struct mmc_card *card, u8 bus_width)
 {
 	int err, width;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->is_init) {
+		u32 bus = (sdinfo->bus_width == 8) ? MMC_BUS_WIDTH_8:
+			  (sdinfo->bus_width == 4) ? MMC_BUS_WIDTH_4:
+						     MMC_BUS_WIDTH_1;
+		int rval = (bus_width == bus) ? 0: -EINVAL;
+		return rval;
+	}
+#endif
 	if (bus_width == MMC_BUS_WIDTH_8)
 		width = 8;
 	else if (bus_width == MMC_BUS_WIDTH_4)

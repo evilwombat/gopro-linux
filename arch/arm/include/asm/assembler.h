@@ -77,9 +77,56 @@
 #if __LINUX_ARM_ARCH__ >= 6
 	.macro	disable_irq_notrace
 	cpsid	i
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	stmfd	sp!, {r0-r2}
+
+	ldr	r0, =boss
+	ldr	r0, [r0]
+
+	ldr	r1, [r0, #BOSS_VIC1MASK_OFFSET]
+	ldr	r2, [r0, #BOSS_GUEST_VIC1_EN_OFFSET]
+	and	r1, r1, r2
+	ldr	r2, =VIC_BASE
+	str	r1, [r2, #VIC_INTEN_CLR_OFFSET]
+
+	ldr	r1, [r0, #BOSS_VIC2MASK_OFFSET]
+	ldr	r2, [r0, #BOSS_GUEST_VIC2_EN_OFFSET]
+	and	r1, r1, r2
+	ldr	r2, =VIC2_BASE
+	str	r1, [r2, #VIC_INTEN_CLR_OFFSET]
+
+	mov	r1, #1
+	str	r1, [r0, #BOSS_GUEST_IRQ_MASK_OFFSET]
+
+	ldmfd	sp!, {r0-r2}
+#endif
 	.endm
 
 	.macro	enable_irq_notrace
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	cpsid	i
+	stmfd	sp!, {r0-r2}
+
+	ldr	r0, =boss
+	ldr	r0, [r0]
+
+	ldr	r1, [r0, #BOSS_VIC1MASK_OFFSET]
+	ldr	r2, [r0, #BOSS_GUEST_VIC1_EN_OFFSET]
+	and	r1, r1, r2
+	ldr	r2, =VIC_BASE
+	str	r1, [r2, #VIC_INTEN_OFFSET]
+
+	ldr	r1, [r0, #BOSS_VIC2MASK_OFFSET]
+	ldr	r2, [r0, #BOSS_GUEST_VIC2_EN_OFFSET]
+	and	r1, r1, r2
+	ldr	r2, =VIC2_BASE
+	str	r1, [r2, #VIC_INTEN_OFFSET]
+
+	mov	r1, #0
+	str	r1, [r0, #BOSS_GUEST_IRQ_MASK_OFFSET]
+
+	ldmfd	sp!, {r0-r2}
+#endif
 	cpsie	i
 	.endm
 #else

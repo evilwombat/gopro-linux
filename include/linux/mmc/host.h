@@ -15,6 +15,20 @@
 
 #include <linux/mmc/core.h>
 #include <linux/mmc/pm.h>
+#ifdef CONFIG_TIWLAN_SDIO
+#include <linux/mmc/card.h>
+#endif
+
+#ifdef CONFIG_TIWLAN_SDIO
+int omap_wifi_status_register(void (*callback)(int card_present,
+        void *dev_id), void *dev_id);
+int omap_wifi_status(struct device *dev, int slot);
+#endif
+
+
+#if defined(CONFIG_AMBARELLA_IPC)
+#include <linux/aipc/i_sdresp.h>
+#endif
 
 struct mmc_ios {
 	unsigned int	clock;			/* clock rate */
@@ -227,6 +241,10 @@ struct mmc_host {
 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
 	unsigned int		bus_refs;	/* reference counter */
 
+	unsigned int		bus_resume_flags;
+#define MMC_BUSRESUME_MANUAL_RESUME	(1 << 0)
+#define MMC_BUSRESUME_NEEDS_RESUME	(1 << 1)
+
 	unsigned int		sdio_irqs;
 	struct task_struct	*sdio_irq_thread;
 	atomic_t		sdio_irq_thread_abort;
@@ -243,6 +261,28 @@ struct mmc_host {
 
 	struct dentry		*debugfs_root;
 
+#ifdef CONFIG_TIWLAN_SDIO
+	struct {
+		struct sdio_cis         *cis;
+		struct sdio_cccr	*cccr;
+		struct sdio_embedded_func   *funcs;
+		unsigned int quirks;    /* embedded sdio card quirks */
+#define MMC_QUIRK_VDD_165_195  (1<<0)  /* do not ignore MMC_VDD_165_195 */
+#define MMC_QUIRK_LENIENT_FUNC0  (1<<1)
+	/* allow SDIO FN0 writes outside of VS CCCR */
+	} embedded_sdio_data;
+
+#else
+	#ifdef CONFIG_MMC_EMBEDDED_SDIO
+		struct {
+			struct sdio_cis			*cis;
+			struct sdio_cccr		*cccr;
+			struct sdio_embedded_func	*funcs;
+			int				num_funcs;
+		} embedded_sdio_data;
+	#endif
+#endif
+
 	unsigned long		private[0] ____cacheline_aligned;
 };
 
@@ -250,6 +290,23 @@ extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
 extern int mmc_add_host(struct mmc_host *);
 extern void mmc_remove_host(struct mmc_host *);
 extern void mmc_free_host(struct mmc_host *);
+
+#ifdef CONFIG_TIWLAN_SDIO
+void mmc_set_embedded_sdio_data(struct mmc_host *host,
+       struct sdio_cis *cis,
+	struct sdio_cccr *cccr,
+       struct sdio_embedded_func *funcs,
+	unsigned int quirks);
+
+#else
+	#ifdef CONFIG_MMC_EMBEDDED_SDIO
+	extern void mmc_set_embedded_sdio_data(struct mmc_host *host,
+						   struct sdio_cis *cis,
+						   struct sdio_cccr *cccr,
+						   struct sdio_embedded_func *funcs,
+						   int num_funcs);
+	#endif
+#endif
 
 static inline void *mmc_priv(struct mmc_host *host)
 {
@@ -261,6 +318,18 @@ static inline void *mmc_priv(struct mmc_host *host)
 #define mmc_dev(x)	((x)->parent)
 #define mmc_classdev(x)	(&(x)->class_dev)
 #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
+#define mmc_bus_needs_resume(host) ((host)->bus_resume_flags & MMC_BUSRESUME_NEEDS_RESUME)
+#define mmc_bus_manual_resume(host) ((host)->bus_resume_flags & MMC_BUSRESUME_MANUAL_RESUME)
+
+static inline void mmc_set_bus_resume_policy(struct mmc_host *host, int manual)
+{
+	if (manual)
+		host->bus_resume_flags |= MMC_BUSRESUME_MANUAL_RESUME;
+	else
+		host->bus_resume_flags &= ~MMC_BUSRESUME_MANUAL_RESUME;
+}
+
+extern int mmc_resume_bus(struct mmc_host *host);
 
 extern int mmc_suspend_host(struct mmc_host *);
 extern int mmc_resume_host(struct mmc_host *);
@@ -326,5 +395,9 @@ static inline int mmc_card_is_powered_resumed(struct mmc_host *host)
 	return host->pm_flags & MMC_PM_KEEP_POWER;
 }
 
+extern int ambarella_sdmmc_cmd_ipc(struct mmc_host * mmc, struct mmc_command * cmd);
+extern struct ipc_sdinfo *ambarella_sd_get_sdinfo(struct mmc_host *mmc);
+extern int ambarella_sdinfo_ipc(struct mmc_host *mmc);
+extern void ambarella_sd_cmd_from_ipc(struct mmc_host * mmc, u8 enable);
 #endif
 

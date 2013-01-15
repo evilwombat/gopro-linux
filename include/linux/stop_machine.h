@@ -130,9 +130,12 @@ static inline int __stop_machine(int (*fn)(void *), void *data,
 				 const struct cpumask *cpus)
 {
 	int ret;
-	local_irq_disable();
+	unsigned long flags;
+
+	local_irq_save(flags);
 	ret = fn(data);
-	local_irq_enable();
+	local_irq_restore(flags);
+
 	return ret;
 }
 

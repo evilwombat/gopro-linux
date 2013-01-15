@@ -39,6 +39,9 @@
 #include <linux/rwsem.h>
 #include <linux/pm_runtime.h>
 #include <asm/uaccess.h>
+#if defined(CONFIG_AMBARELLA_IPC)
+#include <linux/aipc/ipc_mutex.h>
+#endif
 
 #include "i2c-core.h"
 
@@ -1326,6 +1329,9 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
 		} else {
 			i2c_lock_adapter(adap);
 		}
+#if defined(CONFIG_AMBARELLA_IPC)
+		ipc_mutex_lock(adap->ipc_mutex_id);
+#endif
 
 		/* Retry automatically on arbitration loss */
 		orig_jiffies = jiffies;
@@ -1336,6 +1342,9 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
 			if (time_after(jiffies, orig_jiffies + adap->timeout))
 				break;
 		}
+#if defined(CONFIG_AMBARELLA_IPC)
+		ipc_mutex_unlock(adap->ipc_mutex_id);
+#endif
 		i2c_unlock_adapter(adap);
 
 		return ret;

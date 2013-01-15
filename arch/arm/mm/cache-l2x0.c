@@ -29,6 +29,7 @@ static void __iomem *l2x0_base;
 static DEFINE_SPINLOCK(l2x0_lock);
 static uint32_t l2x0_way_mask;	/* Bitmask of active ways */
 static uint32_t l2x0_size;
+static const char *l2x0_type = NULL;
 
 static inline void cache_wait_way(void __iomem *reg, unsigned long mask)
 {
@@ -73,18 +74,32 @@ static inline void l2x0_inv_line(unsigned long addr)
 	writel_relaxed(addr, base + L2X0_INV_LINE_PA);
 }
 
-#ifdef CONFIG_PL310_ERRATA_588369
-static void debug_writel(unsigned long val)
+static inline void __l2x0_inv_all(void)
 {
-	extern void omap_smc1(u32 fn, u32 arg);
-
-	/*
-	 * Texas Instrument secure monitor api to modify the
-	 * PL310 Debug Control Register.
-	 */
-	omap_smc1(0x100, val);
+	/* Invalidating when L2 is enabled is a nono */
+	writel_relaxed(l2x0_way_mask, l2x0_base + L2X0_INV_WAY);
+	cache_wait_way(l2x0_base + L2X0_INV_WAY, l2x0_way_mask);
+	cache_sync();
 }
 
+#if defined(CONFIG_PL310_ERRATA_588369) || defined(CONFIG_PL310_ERRATA_727915)
+
+#define debug_writel(val)	outer_cache.set_debug(val)
+
+static void l2x0_set_debug(unsigned long val)
+{
+	writel_relaxed(val, l2x0_base + L2X0_DEBUG_CTRL);
+}
+#else
+/* Optimised out for non-errata case */
+static inline void debug_writel(unsigned long val)
+{
+}
+
+#define l2x0_set_debug	NULL
+#endif
+
+#ifdef CONFIG_PL310_ERRATA_588369
 static inline void l2x0_flush_line(unsigned long addr)
 {
 	void __iomem *base = l2x0_base;
@@ -96,11 +111,6 @@ static inline void l2x0_flush_line(unsigned long addr)
 	writel_relaxed(addr, base + L2X0_INV_LINE_PA);
 }
 #else
-
-/* Optimised out for non-errata case */
-static inline void debug_writel(unsigned long val)
-{
-}
 
 static inline void l2x0_flush_line(unsigned long addr)
 {
@@ -115,6 +125,10 @@ static void l2x0_cache_sync(void)
 	unsigned long flags;
 
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	cache_sync();
 	spin_unlock_irqrestore(&l2x0_lock, flags);
 }
@@ -125,9 +139,15 @@ static void l2x0_flush_all(void)
 
 	/* clean all ways */
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
+	debug_writel(0x03);
 	writel_relaxed(l2x0_way_mask, l2x0_base + L2X0_CLEAN_INV_WAY);
 	cache_wait_way(l2x0_base + L2X0_CLEAN_INV_WAY, l2x0_way_mask);
 	cache_sync();
+	debug_writel(0x00);
 	spin_unlock_irqrestore(&l2x0_lock, flags);
 }
 
@@ -137,6 +157,10 @@ static void l2x0_clean_all(void)
 
 	/* clean all ways */
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	writel_relaxed(l2x0_way_mask, l2x0_base + L2X0_CLEAN_WAY);
 	cache_wait_way(l2x0_base + L2X0_CLEAN_WAY, l2x0_way_mask);
 	cache_sync();
@@ -149,11 +173,12 @@ static void l2x0_inv_all(void)
 
 	/* invalidate all ways */
 	spin_lock_irqsave(&l2x0_lock, flags);
-	/* Invalidating when L2 is enabled is a nono */
-	BUG_ON(readl(l2x0_base + L2X0_CTRL) & 1);
-	writel_relaxed(l2x0_way_mask, l2x0_base + L2X0_INV_WAY);
-	cache_wait_way(l2x0_base + L2X0_INV_WAY, l2x0_way_mask);
-	cache_sync();
+	if (readl_relaxed(l2x0_base + L2X0_CTRL) & 1) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		BUG_ON(1);
+		return;
+	}
+	__l2x0_inv_all();
 	spin_unlock_irqrestore(&l2x0_lock, flags);
 }
 
@@ -163,6 +188,10 @@ static void l2x0_inv_range(unsigned long start, unsigned long end)
 	unsigned long flags;
 
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	if (start & (CACHE_LINE_SIZE - 1)) {
 		start &= ~(CACHE_LINE_SIZE - 1);
 		debug_writel(0x03);
@@ -207,6 +236,10 @@ static void l2x0_clean_range(unsigned long start, unsigned long end)
 	}
 
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	start &= ~(CACHE_LINE_SIZE - 1);
 	while (start < end) {
 		unsigned long blk_end = start + min(end - start, 4096UL);
@@ -237,6 +270,10 @@ static void l2x0_flush_range(unsigned long start, unsigned long end)
 	}
 
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	start &= ~(CACHE_LINE_SIZE - 1);
 	while (start < end) {
 		unsigned long blk_end = start + min(end - start, 4096UL);
@@ -258,22 +295,72 @@ static void l2x0_flush_range(unsigned long start, unsigned long end)
 	spin_unlock_irqrestore(&l2x0_lock, flags);
 }
 
+static void l2x0_enable(void)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&l2x0_lock, flags);
+	if (readl_relaxed(l2x0_base + L2X0_CTRL) & 1) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
+	__l2x0_inv_all();
+	writel_relaxed(1, l2x0_base + L2X0_CTRL);
+
+	outer_cache.inv_range = l2x0_inv_range;
+	outer_cache.clean_range = l2x0_clean_range;
+	outer_cache.flush_range = l2x0_flush_range;
+	outer_cache.sync = l2x0_cache_sync;
+	outer_cache.flush_all = l2x0_flush_all;
+	outer_cache.inv_all = l2x0_inv_all;
+	outer_cache.clean_all = l2x0_clean_all;
+	spin_unlock_irqrestore(&l2x0_lock, flags);
+
+	printk(KERN_DEBUG "%s cache controller enabled\n", l2x0_type);
+}
+
 static void l2x0_disable(void)
 {
 	unsigned long flags;
 
 	spin_lock_irqsave(&l2x0_lock, flags);
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		spin_unlock_irqrestore(&l2x0_lock, flags);
+		return;
+	}
 	writel(0, l2x0_base + L2X0_CTRL);
+
+	outer_cache.inv_range = NULL;
+	outer_cache.clean_range = NULL;
+	outer_cache.flush_range = NULL;
+	outer_cache.sync = NULL;
+	outer_cache.flush_all = NULL;
+	outer_cache.inv_all = NULL;
+	outer_cache.clean_all = NULL;
 	spin_unlock_irqrestore(&l2x0_lock, flags);
+
+	printk(KERN_DEBUG "%s cache controller disabled\n", l2x0_type);
 }
 
-void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
+static int l2x0_is_enabled(void)
+{
+	unsigned long flags;
+	u32 status;
+
+	spin_lock_irqsave(&l2x0_lock, flags);
+	status = readl_relaxed(l2x0_base + L2X0_CTRL);
+	spin_unlock_irqrestore(&l2x0_lock, flags);
+
+	return (status & 1);
+}
+
+void l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 {
 	__u32 aux;
 	__u32 cache_id;
 	__u32 way_size = 0;
 	int ways;
-	const char *type;
+	unsigned long flags;
 
 	l2x0_base = base;
 
@@ -290,16 +377,16 @@ void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 			ways = 16;
 		else
 			ways = 8;
-		type = "L310";
+		l2x0_type = "L310";
 		break;
 	case L2X0_CACHE_ID_PART_L210:
 		ways = (aux >> 13) & 0xf;
-		type = "L210";
+		l2x0_type = "L210";
 		break;
 	default:
 		/* Assume unknown chips have 8 ways */
 		ways = 8;
-		type = "L2x0 series";
+		l2x0_type = "L2x0 series";
 		break;
 	}
 
@@ -317,17 +404,7 @@ void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 	 * If you are booting from non-secure mode
 	 * accessing the below registers will fault.
 	 */
-	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
-
-		/* l2x0 controller is disabled */
-		writel_relaxed(aux, l2x0_base + L2X0_AUX_CTRL);
-
-		l2x0_inv_all();
-
-		/* enable L2X0 */
-		writel_relaxed(1, l2x0_base + L2X0_CTRL);
-	}
-
+	spin_lock_irqsave(&l2x0_lock, flags);
 	outer_cache.inv_range = l2x0_inv_range;
 	outer_cache.clean_range = l2x0_clean_range;
 	outer_cache.flush_range = l2x0_flush_range;
@@ -335,8 +412,20 @@ void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 	outer_cache.flush_all = l2x0_flush_all;
 	outer_cache.inv_all = l2x0_inv_all;
 	outer_cache.disable = l2x0_disable;
+	outer_cache.clean_all = l2x0_clean_all;
+	outer_cache.enable = l2x0_enable;
+	outer_cache.is_enabled = l2x0_is_enabled;
+	outer_cache.set_debug = l2x0_set_debug;
+	if (!(readl_relaxed(l2x0_base + L2X0_CTRL) & 1)) {
+		writel_relaxed(aux, l2x0_base + L2X0_AUX_CTRL);
+		__l2x0_inv_all();
+		writel_relaxed(1, l2x0_base + L2X0_CTRL);
+	}
+	spin_unlock_irqrestore(&l2x0_lock, flags);
 
-	printk(KERN_INFO "%s cache controller enabled\n", type);
-	printk(KERN_INFO "l2x0: %d ways, CACHE_ID 0x%08x, AUX_CTRL 0x%08x, Cache size: %d B\n",
-			ways, cache_id, aux, l2x0_size);
+	printk(KERN_DEBUG "%s cache controller enabled\n", l2x0_type);
+	printk_once(KERN_INFO "l2x0: %d ways, CACHE_ID 0x%08x,"
+		" AUX_CTRL 0x%08x, Cache size: %d B\n",
+		ways, cache_id, aux, l2x0_size);
 }
+

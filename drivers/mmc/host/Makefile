@@ -2,6 +2,8 @@
 # Makefile for MMC/SD host controller drivers
 #
 
+obj-$(CONFIG_MMC_AMBARELLA)	+= ambarella_sd.o
+obj-$(CONFIG_MMC_BOSS) 		+= boss_sdhc.o
 obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
 obj-$(CONFIG_MMC_PXA)		+= pxamci.o
 obj-$(CONFIG_MMC_IMX)		+= imxmmc.o

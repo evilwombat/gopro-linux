@@ -290,6 +290,69 @@ static unsigned int wm831x_gp_ldo_get_optimum_mode(struct regulator_dev *rdev,
 	return REGULATOR_MODE_NORMAL;
 }
 
+static int wm831x_gp_ldo_set_suspend_enable(struct regulator_dev *rdev)
+{
+	return 0;
+}
+
+static int wm831x_gp_ldo_set_suspend_disable(struct regulator_dev *rdev)
+{
+	return 0;
+}
+
+static int wm831x_gp_ldo_set_suspend_mode(struct regulator_dev *rdev, unsigned int mode)
+{
+	int  ret = 0;
+	struct wm831x_ldo *ldo = rdev_get_drvdata(rdev);
+	int reg = ldo->base + WM831X_LDO_SLEEP_CONTROL;
+	struct wm831x *wm831x = ldo->wm831x;
+	//set ldo sleep mode
+	ret = wm831x_set_bits(wm831x, reg, WM831X_LDO1_SLP_MODE_MASK, mode << WM831X_LDO1_SLP_MODE_SHIFT);
+	if (ret < 0)
+		goto end;
+
+	//set ldo_x sleep slot
+	switch(reg){
+		case WM831X_LDO1_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO1_SLP_SLOT_MASK, WM831X_LDO1_SLP_SLOT << WM831X_LDO1_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO2_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO2_SLP_SLOT_MASK, WM831X_LDO2_SLP_SLOT << WM831X_LDO2_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO3_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO3_SLP_SLOT_MASK, WM831X_LDO3_SLP_SLOT << WM831X_LDO3_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO4_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO4_SLP_SLOT_MASK, WM831X_LDO4_SLP_SLOT << WM831X_LDO4_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO5_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO5_SLP_SLOT_MASK, WM831X_LDO5_SLP_SLOT << WM831X_LDO5_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO6_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO6_SLP_SLOT_MASK, WM831X_LDO6_SLP_SLOT << WM831X_LDO6_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+	}
+
+end:
+	return ret;
+}
 
 static struct regulator_ops wm831x_gp_ldo_ops = {
 	.list_voltage = wm831x_gp_ldo_list_voltage,
@@ -304,6 +367,10 @@ static struct regulator_ops wm831x_gp_ldo_ops = {
 	.is_enabled = wm831x_ldo_is_enabled,
 	.enable = wm831x_ldo_enable,
 	.disable = wm831x_ldo_disable,
+
+	.set_suspend_enable = wm831x_gp_ldo_set_suspend_enable,
+	.set_suspend_disable = wm831x_gp_ldo_set_suspend_disable,
+	.set_suspend_mode = wm831x_gp_ldo_set_suspend_mode,
 };
 
 static __devinit int wm831x_gp_ldo_probe(struct platform_device *pdev)
@@ -557,6 +624,59 @@ static int wm831x_aldo_get_status(struct regulator_dev *rdev)
 		return regulator_mode_to_status(ret);
 }
 
+static int wm831x_aldo_set_suspend_enable(struct regulator_dev *rdev)
+{
+	return 0;
+}
+
+static int wm831x_aldo_set_suspend_disable(struct regulator_dev *rdev)
+{
+	return 0;
+}
+
+static int wm831x_aldo_set_suspend_mode(struct regulator_dev *rdev, unsigned int mode)
+{
+	int  ret = 0;
+	struct wm831x_ldo *ldo = rdev_get_drvdata(rdev);
+	int reg = ldo->base + WM831X_LDO_SLEEP_CONTROL;
+	struct wm831x *wm831x = ldo->wm831x;
+	//set ldo sleep mode
+	ret = wm831x_set_bits(wm831x, reg, WM831X_LDO7_SLP_MODE_MASK, mode << WM831X_LDO7_SLP_MODE_SHIFT);
+	if (ret < 0)
+		goto end;
+
+	//set ldo_x sleep slot
+	switch(reg){
+		case WM831X_LDO7_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO7_SLP_SLOT_MASK, WM831X_LDO7_SLP_SLOT << WM831X_LDO7_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO8_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO8_SLP_SLOT_MASK, WM831X_LDO8_SLP_SLOT << WM831X_LDO8_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO9_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO9_SLP_SLOT_MASK, WM831X_LDO9_SLP_SLOT << WM831X_LDO9_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_LDO10_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_LDO10_SLP_SLOT_MASK, WM831X_LDO10_SLP_SLOT << WM831X_LDO10_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+	}
+
+end:
+	return ret;
+}
+
+
 static struct regulator_ops wm831x_aldo_ops = {
 	.list_voltage = wm831x_aldo_list_voltage,
 	.get_voltage_sel = wm831x_aldo_get_voltage_sel,
@@ -569,6 +689,10 @@ static struct regulator_ops wm831x_aldo_ops = {
 	.is_enabled = wm831x_ldo_is_enabled,
 	.enable = wm831x_ldo_enable,
 	.disable = wm831x_ldo_disable,
+
+	.set_suspend_enable = wm831x_aldo_set_suspend_enable,
+	.set_suspend_disable = wm831x_aldo_set_suspend_disable,
+	.set_suspend_mode = wm831x_aldo_set_suspend_mode,
 };
 
 static __devinit int wm831x_aldo_probe(struct platform_device *pdev)

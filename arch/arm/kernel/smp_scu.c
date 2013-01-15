@@ -32,7 +32,7 @@ unsigned int __init scu_get_core_count(void __iomem *scu_base)
 /*
  * Enable the SCU
  */
-void __init scu_enable(void __iomem *scu_base)
+void scu_enable(void __iomem *scu_base)
 {
 	u32 scu_ctrl;
 
@@ -50,3 +50,15 @@ void __init scu_enable(void __iomem *scu_base)
 	 */
 	flush_cache_all();
 }
+
+void scu_disable(void __iomem *scu_base)
+{
+	u32 scu_ctrl;
+
+	scu_ctrl = __raw_readl(scu_base + SCU_CTRL);
+	scu_ctrl &= ~0x01;
+	__raw_writel(scu_ctrl, scu_base + SCU_CTRL);
+
+	flush_cache_all();
+}
+

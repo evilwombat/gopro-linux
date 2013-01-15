@@ -30,11 +30,6 @@
 #define WM831X_BUCKV_MAX_SELECTOR 0x68
 #define WM831X_BUCKP_MAX_SELECTOR 0x66
 
-#define WM831X_DCDC_MODE_FAST    0
-#define WM831X_DCDC_MODE_NORMAL  1
-#define WM831X_DCDC_MODE_IDLE    2
-#define WM831X_DCDC_MODE_STANDBY 3
-
 #define WM831X_DCDC_MAX_NAME 6
 
 /* Register offsets in control block */
@@ -162,11 +157,37 @@ static int wm831x_dcdc_set_mode(struct regulator_dev *rdev, unsigned int mode)
 static int wm831x_dcdc_set_suspend_mode(struct regulator_dev *rdev,
 					unsigned int mode)
 {
+	int ret = 0;
 	struct wm831x_dcdc *dcdc = rdev_get_drvdata(rdev);
 	struct wm831x *wm831x = dcdc->wm831x;
 	u16 reg = dcdc->base + WM831X_DCDC_SLEEP_CONTROL;
 
-	return wm831x_dcdc_set_mode_int(wm831x, reg, mode);
+	ret = wm831x_dcdc_set_mode_int(wm831x, reg, mode);
+	if (ret < 0)
+		goto end;
+
+	//set dcdc_x sleep slot
+	switch(reg){
+		case WM831X_DC1_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_DC1_SLP_SLOT_MASK, WM831X_DCDC1_SLP_SLOT << WM831X_DC1_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_DC2_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_DC2_SLP_SLOT_MASK, WM831X_DCDC2_SLP_SLOT << WM831X_DC2_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+
+		case WM831X_DC3_SLEEP_CONTROL:
+			ret = wm831x_set_bits(wm831x, reg, WM831X_DC3_SLP_SLOT_MASK, WM831X_DCDC3_SLP_SLOT << WM831X_DC3_SLP_SLOT_SHIFT);
+			if (ret < 0)
+				goto end;
+			break;
+	}
+end:
+	return ret;
 }
 
 static int wm831x_dcdc_get_status(struct regulator_dev *rdev)
@@ -425,6 +446,16 @@ static int wm831x_buckv_get_current_limit(struct regulator_dev *rdev)
 	return wm831x_dcdc_ilim[val & WM831X_DC1_HC_THR_MASK];
 }
 
+static int wm831x_buckv_set_suspend_enable(struct regulator_dev *rdev)
+{
+		return 0;
+}
+
+static int wm831x_buckv_set_suspend_disable(struct regulator_dev *rdev)
+{
+		return 0;
+}
+
 static struct regulator_ops wm831x_buckv_ops = {
 	.set_voltage = wm831x_buckv_set_voltage,
 	.get_voltage_sel = wm831x_buckv_get_voltage_sel,
@@ -440,6 +471,9 @@ static struct regulator_ops wm831x_buckv_ops = {
 	.get_mode = wm831x_dcdc_get_mode,
 	.set_mode = wm831x_dcdc_set_mode,
 	.set_suspend_mode = wm831x_dcdc_set_suspend_mode,
+
+	.set_suspend_enable = wm831x_buckv_set_suspend_enable,
+	.set_suspend_disable = wm831x_buckv_set_suspend_disable,
 };
 
 /*
@@ -509,7 +543,7 @@ static __devinit int wm831x_buckv_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret, irq;
 
-	dev_dbg(&pdev->dev, "Probing DCDC%d\n", id + 1);
+	dev_dbg(&pdev->dev, "Probing buckv DCDC%d\n", id + 1);
 
 	if (pdata == NULL || pdata->dcdc[id] == NULL)
 		return -ENODEV;
@@ -693,6 +727,16 @@ static int wm831x_buckp_get_voltage_sel(struct regulator_dev *rdev)
 	return val & WM831X_DC3_ON_VSEL_MASK;
 }
 
+static int wm831x_buckp_set_suspend_enable(struct regulator_dev *rdev)
+{
+		return 0;
+}
+
+static int wm831x_buckp_set_suspend_disable(struct regulator_dev *rdev)
+{
+		return 0;
+}
+
 static struct regulator_ops wm831x_buckp_ops = {
 	.set_voltage = wm831x_buckp_set_voltage,
 	.get_voltage_sel = wm831x_buckp_get_voltage_sel,
@@ -706,6 +750,9 @@ static struct regulator_ops wm831x_buckp_ops = {
 	.get_mode = wm831x_dcdc_get_mode,
 	.set_mode = wm831x_dcdc_set_mode,
 	.set_suspend_mode = wm831x_dcdc_set_suspend_mode,
+
+	.set_suspend_enable = wm831x_buckp_set_suspend_enable,
+	.set_suspend_disable = wm831x_buckp_set_suspend_disable,
 };
 
 static __devinit int wm831x_buckp_probe(struct platform_device *pdev)
@@ -717,7 +764,7 @@ static __devinit int wm831x_buckp_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret, irq;
 
-	dev_dbg(&pdev->dev, "Probing DCDC%d\n", id + 1);
+	dev_dbg(&pdev->dev, "Probing buckp DCDC%d\n", id + 1);
 
 	if (pdata == NULL || pdata->dcdc[id] == NULL)
 		return -ENODEV;
@@ -847,7 +894,7 @@ static __devinit int wm831x_boostp_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret, irq;
 
-	dev_dbg(&pdev->dev, "Probing DCDC%d\n", id + 1);
+	dev_dbg(&pdev->dev, "Probing boostp DCDC%d\n", id + 1);
 
 	if (pdata == NULL || pdata->dcdc[id] == NULL)
 		return -ENODEV;

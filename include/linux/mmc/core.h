@@ -117,6 +117,9 @@ struct mmc_data {
 
 	unsigned int		sg_len;		/* size of scatter list */
 	struct scatterlist	*sg;		/* I/O scatter list */
+#if defined(CONFIG_AMBARELLA_IPC)
+	void			*buf;
+#endif
 };
 
 struct mmc_request {

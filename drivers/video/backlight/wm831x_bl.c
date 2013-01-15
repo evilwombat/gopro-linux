@@ -40,11 +40,6 @@ static int wm831x_backlight_set(struct backlight_device *bl, int brightness)
 		if (ret < 0)
 			goto err;
 
-		/* Enable the DC-DC */
-		ret = wm831x_set_bits(wm831x, WM831X_DCDC_ENABLE,
-				      WM831X_DC4_ENA, WM831X_DC4_ENA);
-		if (ret < 0)
-			goto err;
 	}
 
 	if (power_down) {
@@ -73,6 +68,12 @@ static int wm831x_backlight_set(struct backlight_device *bl, int brightness)
 				      WM831X_CS1_DRIVE, WM831X_CS1_DRIVE);
 		if (ret < 0)
 			return ret;
+
+		/* Enable the DC-DC */
+		ret = wm831x_set_bits(wm831x, WM831X_DCDC_ENABLE,
+				      WM831X_DC4_ENA, WM831X_DC4_ENA);
+		if (ret < 0)
+			goto err;
 	}
 
 	data->current_brightness = brightness;
@@ -203,6 +204,8 @@ static int wm831x_backlight_probe(struct platform_device *pdev)
 	}
 
 	bl->props.brightness = max_isel;
+	bl->props.power = FB_BLANK_UNBLANK;
+	bl->props.fb_blank = FB_BLANK_UNBLANK;
 
 	platform_set_drvdata(pdev, bl);
 

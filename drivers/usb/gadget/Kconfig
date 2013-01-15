@@ -487,6 +487,29 @@ config USB_GOKU
 	default USB_GADGET
 	select USB_GADGET_SELECTED
 
+config USB_GADGET_AMBARELLA
+	boolean "Ambarella USB Device Controller"
+	depends on PLAT_AMBARELLA
+	select USB_GADGET_DUALSPEED
+	help
+	   Many AMBARLLA processors (such as the A2,A3) have a
+	   full/high speed USB Device Controller.
+
+	   Say "y" to link the driver statically, or "m" to build a
+	   dynamically linked module called "ambarella_udc" and force all
+	   gadget drivers to also be dynamically linked.
+
+config USB_AMBARELLA
+	tristate
+	depends on USB_GADGET_AMBARELLA
+	default USB_GADGET
+	select USB_GADGET_SELECTED
+
+config NOT_SHARE_USB_CONTROLLER_WITH_UITRON
+	boolean "Not Share the Ambarella USB controller with uItron"
+	depends on USB_GADGET_AMBARELLA
+	default n
+
 config USB_GADGET_LANGWELL
 	boolean "Intel Langwell USB Device Controller"
 	depends on PCI
@@ -902,6 +925,67 @@ config USB_G_PRINTER
 
 	  For more information, see Documentation/usb/gadget_printer.txt
 	  which includes sample code for accessing the device file.
+
+config USB_AMB_STREAM
+	tristate "Gadget Ambarella Data Streaming"
+	depends on USB_GADGET_AMBARELLA
+	help
+	  Gadget Ambarella Data Streaming is a single-configuration
+	  single-interface device.
+	  The driver needs two bulk-capable endpoints, and one interrupt-capable
+	  endpoint is optional. It may need special protocol that can be
+	  designed at top layer to transfer data with host.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "g_amb_stream".
+
+config USB_ANDROID
+	boolean "Android Gadget"
+	depends on SWITCH
+	help
+	  The Android gadget driver supports multiple USB functions.
+	  The functions can be configured via a board file and may be
+	  enabled and disabled dynamically.
+
+config USB_ANDROID_ACM
+	boolean "Android gadget ACM serial function"
+	depends on USB_ANDROID
+	help
+	  Provides ACM serial function for android gadget driver.
+
+config USB_ANDROID_ADB
+	boolean "Android gadget adb function"
+	depends on USB_ANDROID
+	help
+	  Provides adb function for android gadget driver.
+
+config USB_ANDROID_MASS_STORAGE
+	boolean "Android gadget mass storage function"
+	depends on USB_ANDROID && SWITCH
+	help
+	  Provides USB mass storage function for android gadget driver.
+
+config USB_ANDROID_MTP
+	boolean "Android MTP function"
+	depends on USB_ANDROID
+	help
+	  Provides Media Transfer Protocol (MTP) support for android gadget driver.
+
+config USB_ANDROID_RNDIS
+	boolean "Android gadget RNDIS ethernet function"
+	depends on USB_ANDROID
+	help
+	  Provides RNDIS ethernet function for android gadget driver.
+
+config USB_ANDROID_RNDIS_WCEIS
+        boolean "Use Windows Internet Sharing Class/SubClass/Protocol"
+        depends on USB_ANDROID_RNDIS
+        help
+         Causes the driver to look like a Windows-compatible Internet
+         Sharing device, so Windows auto-detects it.
+
+         If you enable this option, the device is no longer CDC ethernet
+         compatible.
 
 config USB_CDC_COMPOSITE
 	tristate "CDC Composite Device (Ethernet and ACM)"

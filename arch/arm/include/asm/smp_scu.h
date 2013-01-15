@@ -3,5 +3,6 @@
 
 unsigned int scu_get_core_count(void __iomem *);
 void scu_enable(void __iomem *);
+void scu_disable(void __iomem *);
 
 #endif

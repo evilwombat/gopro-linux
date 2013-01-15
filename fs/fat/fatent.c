@@ -623,6 +623,108 @@ error:
 
 EXPORT_SYMBOL_GPL(fat_free_clusters);
 
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+int fat_ent_read2(struct super_block *sb , struct fat_entry *fatent, int entry)
+{
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	struct fatent_operations *ops = sbi->fatent_ops;
+	int err, offset;
+	sector_t blocknr;
+
+	if (entry < FAT_START_ENT || sbi->max_cluster <= entry) {
+		fatent_brelse(fatent);
+		fat_fs_error(sb, "invalid access to FAT (entry 0x%08x)", entry);
+		return -EIO;
+	}
+
+	fatent_set_entry(fatent, entry);
+	ops->ent_blocknr(sb, entry, &offset, &blocknr);
+
+	if (!fat_ent_update_ptr(sb, fatent, offset, blocknr)) {
+		fatent_brelse(fatent);
+		err = ops->ent_bread(sb, fatent, offset, blocknr);
+		if (err)
+			return err;
+	}
+	return ops->ent_get(fatent);
+}
+
+
+int fat_free_del_clusters(struct super_block *sb, int cluster)
+{
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	struct fatent_operations *ops = sbi->fatent_ops;
+	struct fat_entry fatent;
+	struct buffer_head *bhs[MAX_BUF_PER_PAGE];
+	int i, err, nr_bhs;
+	int first_cl = cluster;
+
+	nr_bhs = 0;
+	fatent_init(&fatent);
+	lock_fat(sbi);
+	do {
+		cluster = fat_ent_read2(sb, &fatent, cluster);
+		if (cluster < 0) {
+			err = cluster;
+			goto error;
+		} else if (cluster == FAT_ENT_FREE) {
+			//fat_fs_error(sb, "%s: deleting FAT entry beyond EOF",
+			//	     __func__);
+			err = -EIO;
+			goto error;
+		}
+
+		/*
+		 * Issue discard for the sectors we no longer care about,
+		 * batching contiguous clusters into one request
+		 */
+		if (cluster != fatent.entry + 1) {
+			int nr_clus = fatent.entry - first_cl + 1;
+
+			sb_issue_discard(sb, fat_clus_to_blknr(sbi, first_cl),
+					 nr_clus * sbi->sec_per_clus,
+					 GFP_NOFS, 0x0);
+			first_cl = cluster;
+		}
+
+		ops->ent_put(&fatent, FAT_ENT_FREE);
+		if (sbi->free_clusters != -1) {
+			sbi->free_clusters++;
+			sb->s_dirt = 1;
+		}
+
+		if (nr_bhs + fatent.nr_bhs > MAX_BUF_PER_PAGE) {
+			if (sb->s_flags & MS_SYNCHRONOUS) {
+				err = fat_sync_bhs(bhs, nr_bhs);
+				if (err)
+					goto error;
+			}
+			err = fat_mirror_bhs(sb, bhs, nr_bhs);
+			if (err)
+				goto error;
+			for (i = 0; i < nr_bhs; i++)
+				brelse(bhs[i]);
+			nr_bhs = 0;
+		}
+		fat_collect_bhs(bhs, &nr_bhs, &fatent);
+	} while (cluster != FAT_ENT_EOF);
+
+	if (sb->s_flags & MS_SYNCHRONOUS) {
+		err = fat_sync_bhs(bhs, nr_bhs);
+		if (err)
+			goto error;
+	}
+	err = fat_mirror_bhs(sb, bhs, nr_bhs);
+error:
+	fatent_brelse(&fatent);
+	for (i = 0; i < nr_bhs; i++)
+		brelse(bhs[i]);
+	unlock_fat(sbi);
+
+	return err;
+}
+#endif
+
 /* 128kb is the whole sectors for FAT12 and FAT16 */
 #define FAT_READA_SIZE		(128 * 1024)
 

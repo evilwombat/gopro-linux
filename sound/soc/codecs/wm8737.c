@@ -46,13 +46,13 @@ struct wm8737_priv {
 };
 
 static const u16 wm8737_reg[WM8737_REGISTER_COUNT] = {
-	0x00C3,     /* R0  - Left PGA volume */
-	0x00C3,     /* R1  - Right PGA volume */
-	0x0007,     /* R2  - AUDIO path L */
-	0x0007,     /* R3  - AUDIO path R */
+	0x01C3,     /* R0  - Left PGA volume, 0db default */
+	0x01C3,     /* R1  - Right PGA volume, 0db default  */
+	0x0010,     /* R2  - turn on MIC preamp, apply gain immediately.  */
+	0x0010,	    /* R3  - turn on MIC preamp, apply gain immediately.  */
 	0x0000,     /* R4  - 3D Enhance */
 	0x0000,     /* R5  - ADC Control */
-	0x0000,     /* R6  - Power Management */
+	0x01FF,     /* R6  - Power Management, turn on all modules */
 	0x000A,     /* R7  - Audio Format */
 	0x0000,     /* R8  - Clocking */
 	0x000F,     /* R9  - MIC Preamp Control */
@@ -112,6 +112,22 @@ static const char *alc_fn_text[] = {
 static const struct soc_enum alc_fn =
 	SOC_ENUM_SINGLE(WM8737_ALC1, 7, 4, alc_fn_text);
 
+static const char *monomix_fn_text[] = {
+	"Stereo", "Analog Monomix", "Digital Monomix"
+};
+	
+static const struct soc_enum monomix_fn = 
+	SOC_ENUM_SINGLE(WM8737_ADC_CONTROL, 7, 3, monomix_fn_text);
+
+static const char *monout_fn_text[] = {
+	"Original", "Copy Left to Right"
+};
+	
+static const struct soc_enum monout_fn = 
+	SOC_ENUM_SINGLE(WM8737_ADC_CONTROL, 1, 2, monout_fn_text);
+
+
+
 static const char *alc_hold_text[] = {
 	"0", "2.67ms", "5.33ms", "10.66ms", "21.32ms", "42.64ms", "85.28ms",
 	"170.56ms", "341.12ms", "682.24ms", "1.364s", "2.728s", "5.458s",
@@ -139,16 +155,16 @@ static const struct soc_enum alc_dcy =
 
 static const struct snd_kcontrol_new wm8737_snd_controls[] = {
 SOC_DOUBLE_R_TLV("Mic Boost Volume", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
-		 6, 3, 0, micboost_tlv),
+		 5, 3, 0, micboost_tlv),  //fix bug, should be from bit5
 SOC_DOUBLE_R("Mic Boost Switch", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
 	     4, 1, 0),
-SOC_DOUBLE("Mic ZC Switch", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
-	   3, 1, 0),
+SOC_DOUBLE_R("Mic ZC Switch", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
+	   3, 1, 0),   //fix bug, previous SOC_DOUBLE is wrong for two registers
 
 SOC_DOUBLE_R_TLV("Capture Volume", WM8737_LEFT_PGA_VOLUME,
 		 WM8737_RIGHT_PGA_VOLUME, 0, 255, 0, pga_tlv),
-SOC_DOUBLE("Capture ZC Switch", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
-	   2, 1, 0),
+SOC_DOUBLE_R("Capture ZC Switch", WM8737_AUDIO_PATH_L, WM8737_AUDIO_PATH_R,
+	   2, 1, 0),   //fix bug, previous SOC_DOUBLE is wrong for two registers
 
 SOC_DOUBLE("INPUT1 DC Bias Switch", WM8737_MISC_BIAS_CONTROL, 0, 1, 1, 0),
 
@@ -156,6 +172,9 @@ SOC_ENUM("Mic PGA Bias", micbias_enum),
 SOC_SINGLE("ADC Low Power Switch", WM8737_ADC_CONTROL, 2, 1, 0),
 SOC_SINGLE("High Pass Filter Switch", WM8737_ADC_CONTROL, 0, 1, 1),
 SOC_DOUBLE("Polarity Invert Switch", WM8737_ADC_CONTROL, 5, 6, 1, 0),
+
+SOC_ENUM("Monomix", monomix_fn),
+SOC_ENUM("Monout", monout_fn),
 
 SOC_SINGLE("3D Switch", WM8737_3D_ENHANCE, 0, 1, 0),
 SOC_SINGLE("3D Depth", WM8737_3D_ENHANCE, 1, 15, 0),

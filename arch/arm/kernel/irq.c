@@ -177,18 +177,39 @@ int __init arch_probe_nr_irqs(void)
 }
 #endif
 
-#ifdef CONFIG_HOTPLUG_CPU
-
-static void route_irq(struct irq_desc *desc, unsigned int irq, unsigned int cpu)
+#ifdef CONFIG_SMP
+void balance_irqs(void)
 {
-	pr_debug("IRQ%u: moving from cpu%u to cpu%u\n", irq, desc->irq_data.node, cpu);
+	unsigned int i;
+	struct irq_desc *desc;
+	unsigned long flags;
+	struct irq_data *d;
 
-	raw_spin_lock_irq(&desc->lock);
-	desc->irq_data.chip->irq_set_affinity(&desc->irq_data,
-					      cpumask_of(cpu), false);
-	raw_spin_unlock_irq(&desc->lock);
+	local_irq_save(flags);
+	for_each_irq_desc(i, desc) {
+		if (!irq_can_set_affinity(i))
+			continue;
+		d = &desc->irq_data;
+		raw_spin_lock_irq(&desc->lock);
+		if (desc->status & (IRQ_AFFINITY_SET | IRQ_NO_BALANCING)) {
+			if (!cpumask_intersects(d->affinity,
+				cpu_online_mask)) {
+				desc->status &= ~IRQ_AFFINITY_SET;
+				goto balance_irqs_setall;
+			}
+			goto balance_irqs_set;
+		}
+balance_irqs_setall:
+		cpumask_and(d->affinity, cpu_online_mask, irq_default_affinity);
+balance_irqs_set:
+		d->chip->irq_set_affinity(d, d->affinity, false);
+		raw_spin_unlock_irq(&desc->lock);
+	}
+	local_irq_restore(flags);
 }
+#endif /* CONFIG_SMP */
 
+#ifdef CONFIG_HOTPLUG_CPU
 /*
  * The CPU has been marked offline.  Migrate IRQs off this CPU.  If
  * the affinity settings do not allow other CPUs, force them onto any
@@ -198,25 +219,31 @@ void migrate_irqs(void)
 {
 	unsigned int i, cpu = smp_processor_id();
 	struct irq_desc *desc;
+	cpumask_var_t new_affinity;
+	struct irq_data *d;
 
+	if (!zalloc_cpumask_var(&new_affinity, GFP_KERNEL))
+		BUG();
 	for_each_irq_desc(i, desc) {
-		struct irq_data *d = &desc->irq_data;
-
-		if (d->node == cpu) {
-			unsigned int newcpu = cpumask_any_and(d->affinity,
-							      cpu_online_mask);
-			if (newcpu >= nr_cpu_ids) {
-				if (printk_ratelimit())
-					printk(KERN_INFO "IRQ%u no longer affine to CPU%u\n",
-					       i, cpu);
-
-				cpumask_setall(d->affinity);
-				newcpu = cpumask_any_and(d->affinity,
-							 cpu_online_mask);
+		if (!irq_can_set_affinity(i))
+			continue;
+		d = &desc->irq_data;
+		if (cpumask_intersects(cpumask_of(cpu), d->affinity)) {
+			pr_debug("IRQ%u: disabled in CPU%u\n", i, cpu);
+			cpumask_and(new_affinity, d->affinity, cpu_online_mask);
+			if(cpumask_empty(new_affinity)) {
+				pr_warn("IRQ%u: no longer affine any CPU, "
+					"boardcast to all online!\n", i);
+				cpumask_copy(new_affinity, cpu_online_mask);
 			}
-
-			route_irq(desc, i, newcpu);
+			raw_spin_lock_irq(&desc->lock);
+			cpumask_copy(d->affinity, new_affinity);
+			desc->status &= ~IRQ_AFFINITY_SET;
+			d->chip->irq_set_affinity(d, new_affinity, false);
+			raw_spin_unlock_irq(&desc->lock);
 		}
 	}
+	free_cpumask_var(new_affinity);
 }
 #endif /* CONFIG_HOTPLUG_CPU */
+

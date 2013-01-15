@@ -130,7 +130,7 @@ out:
 
 /*
  * New, all-improved, singing, dancing, iBCS2-compliant getdents()
- * interface. 
+ * interface.
  */
 struct linux_dirent {
 	unsigned long	d_ino;
@@ -188,6 +188,15 @@ efault:
 	buf->error = -EFAULT;
 	return -EFAULT;
 }
+
+#if defined(CONFIG_AMBARELLA_IPC)
+int lk_filldir(void * __buf, const char * name, int namlen, loff_t offset,
+		   u64 ino, unsigned int d_type)
+{
+	return filldir(__buf, name, namlen, offset, ino, d_type);
+}
+EXPORT_SYMBOL(lk_filldir);
+#endif
 
 SYSCALL_DEFINE3(getdents, unsigned int, fd,
 		struct linux_dirent __user *, dirent, unsigned int, count)

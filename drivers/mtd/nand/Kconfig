@@ -1,3 +1,10 @@
+config MTD_NAND_IDS
+	tristate "Include chip ids for known NAND devices."
+	depends on MTD
+	help
+	  Useful for NAND drivers that do not use the NAND subsystem but
+	  still like to take advantage of the known chip information.
+
 config MTD_NAND_ECC
 	tristate
 
@@ -42,6 +49,13 @@ config MTD_NAND_MUSEUM_IDS
 	  Enable this option only when your board has first generation
 	  NAND chips (page size 256 byte, erase size 4-8KiB). The IDs
 	  of these chips were reused by later, larger chips.
+
+config MTD_NAND_AMBARELLA
+	tristate "Ambarella Media Soc NAND support"
+	depends on PLAT_AMBARELLA
+	help
+	  This enables the SLC NAND flash controller on the Ambarella
+	  Media SoC.
 
 config MTD_NAND_AUTCPU12
 	tristate "SmartMediaCard on autronix autcpu12 board"
@@ -122,9 +136,6 @@ config MTD_NAND_OMAP_PREFETCH_DMA
 	 The GPMC PREFETCH engine can be configured eigther in MPU interrupt mode
 	 or in DMA interrupt mode.
 	 Say y for DMA mode or MPU mode will be used
-
-config MTD_NAND_IDS
-	tristate
 
 config MTD_NAND_RICOH
 	tristate "Ricoh xD card reader"
@@ -532,5 +543,10 @@ config MTD_NAND_FSMC
 	help
 	  Enables support for NAND Flash chips on the ST Microelectronics
 	  Flexible Static Memory Controller (FSMC)
+
+config MTD_NAND_BOSS
+	tristate "BOSS NAND virtual driver"
+	help
+		BOSS NAND virtual driver.
 
 endif # MTD_NAND

@@ -1070,6 +1070,11 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_da8xx_driver
 #endif
 
+#ifdef CONFIG_PLAT_AMBARELLA_SUPPORT_USB
+#include "ohci-ambarella.c"
+#define PLATFORM_DRIVER		ohci_hcd_ambarella_driver
+#endif
+
 #if defined(CONFIG_CPU_SUBTYPE_SH7720) || \
     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
     defined(CONFIG_CPU_SUBTYPE_SH7763) || \

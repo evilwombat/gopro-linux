@@ -18,9 +18,13 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_AD1980 if SND_SOC_AC97_BUS
 	select SND_SOC_ADS117X
 	select SND_SOC_AD73311 if I2C
+	select SND_SOC_ADAV803 if I2C
+	select SND_SOC_AMBARELLA_A2AUC
+	select SND_SOC_AMBARELLA_DUMMY
 	select SND_SOC_AK4104 if SPI_MASTER
 	select SND_SOC_AK4535 if I2C
 	select SND_SOC_AK4642 if I2C
+	select SND_SOC_AK4642_AMB if I2C
 	select SND_SOC_AK4671 if I2C
 	select SND_SOC_ALC5623 if I2C
 	select SND_SOC_CQ0093VC if MFD_DAVINCI_VOICECODEC
@@ -122,6 +126,15 @@ config SND_SOC_AD73311
 config SND_SOC_ADS117X
 	tristate
 
+config SND_SOC_ADAV803
+	tristate
+
+config SND_SOC_AMBARELLA_A2AUC
+	tristate
+
+config SND_SOC_AMBARELLA_DUMMY
+	tristate
+
 config SND_SOC_AK4104
 	tristate
 
@@ -129,6 +142,9 @@ config SND_SOC_AK4535
 	tristate
 
 config SND_SOC_AK4642
+	tristate
+
+config SND_SOC_AK4642_AMB
 	tristate
 
 config SND_SOC_AK4671

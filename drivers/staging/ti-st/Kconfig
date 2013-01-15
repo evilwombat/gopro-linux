@@ -11,4 +11,11 @@ config ST_BT
 	  This enables the Bluetooth driver for TI BT/FM/GPS combo devices.
 	  This makes use of shared transport line discipline core driver to
 	  communicate with the BT core of the combo chip.
+config ST_GPS
+	tristate "gps driver for ST"
+	select TI_ST
+	help
+	  This enables the GPS driver for TI WL128x BT/FM/GPS combo devices.
+	  It will provide a character device for the TI GPS host software to
+	  access the GPS core on the WL128x.
 endmenu

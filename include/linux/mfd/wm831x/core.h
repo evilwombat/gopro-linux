@@ -233,6 +233,7 @@
 #define WM831X_ON_PIN_TO_MASK                   0x0003  /* ON_PIN_TO - [1:0] */
 #define WM831X_ON_PIN_TO_SHIFT                       0  /* ON_PIN_TO - [1:0] */
 #define WM831X_ON_PIN_TO_WIDTH                       2  /* ON_PIN_TO - [1:0] */
+#define WM831X_ON_PIN_PRIMACT_ON			1
 
 struct regulator_dev;
 
@@ -282,6 +283,7 @@ struct wm831x {
 	 */
 	struct mutex key_lock;
 	unsigned int locked:1;
+	u16 auxadc_data;
 };
 
 /* Device I/O API */

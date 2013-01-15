@@ -2,6 +2,9 @@
 # Makefile for the kernel serial device drivers.
 #
 
+obj-$(CONFIG_SERIAL_AMBARELLA) += ambarella_uart.o
+obj-$(CONFIG_VIRTUAL_SERIAL_AMBARELLA) += ambarella_vuart.o
+
 obj-$(CONFIG_SERIAL_CORE) += serial_core.o
 obj-$(CONFIG_SERIAL_21285) += 21285.o
 

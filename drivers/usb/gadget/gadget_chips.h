@@ -126,6 +126,12 @@
 #define gadget_is_ci13xxx_pci(g)	0
 #endif
 
+#ifdef CONFIG_USB_GADGET_AMBARELLA
+#define gadget_is_ambarella(g)	(!strcmp("ambarella_udc", (g)->name))
+#else
+#define gadget_is_ambarella(g)	0
+#endif
+
 // CONFIG_USB_GADGET_SX2
 // CONFIG_USB_GADGET_AU1X00
 // ...
@@ -205,6 +211,8 @@ static inline int usb_gadget_controller_number(struct usb_gadget *gadget)
 		return 0x22;
 	else if (gadget_is_ci13xxx_pci(gadget))
 		return 0x23;
+	else if (gadget_is_ambarella(gadget))
+		return 0x77;
 	else if (gadget_is_langwell(gadget))
 		return 0x24;
 	else if (gadget_is_r8a66597(gadget))
@@ -215,6 +223,8 @@ static inline int usb_gadget_controller_number(struct usb_gadget *gadget)
 		return 0x27;
 	else if (gadget_is_ci13xxx_msm(gadget))
 		return 0x28;
+	else if (gadget_is_ambarella(gadget))
+		return 0x29;
 	return -ENOENT;
 }
 
@@ -237,4 +247,14 @@ static inline bool gadget_supports_altsettings(struct usb_gadget *gadget)
 	return true;
 }
 
+/**
+ * gadget_dma32 - return true if we want buffer aligned on 32 bits (for dma)
+ * @gadget: the gadget in question
+ */
+static inline bool gadget_dma32(struct usb_gadget *gadget) // Rick
+{
+	if (gadget_is_ambarella(gadget))
+		return true;
+	return false;
+}
 #endif /* __GADGET_CHIPS_H */

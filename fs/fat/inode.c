@@ -38,6 +38,25 @@ static int fat_default_codepage = CONFIG_FAT_DEFAULT_CODEPAGE;
 static char fat_default_iocharset[] = CONFIG_FAT_DEFAULT_IOCHARSET;
 
 
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+#define MAX_DEL_DIR 10
+
+static struct kmem_cache *fat_dir_inode_cachep;
+
+
+struct fast_del_dir {
+	struct inode *inode;
+	struct list_head file_cache;
+};
+
+struct fast_del_file {
+	struct inode *inode;
+	struct list_head file;
+};
+
+struct fast_del_dir del_dir_inode[MAX_DEL_DIR];
+#endif
+
 static int fat_add_cluster(struct inode *inode)
 {
 	int err, cluster;
@@ -523,6 +542,28 @@ static void fat_i_callback(struct rcu_head *head)
 
 static void fat_destroy_inode(struct inode *inode)
 {
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	struct msdos_inode_info *mi=MSDOS_I(inode);
+	int i=0;
+
+	if(mi->i_flag==0)
+		goto done;
+
+	for(i=0;i<MAX_DEL_DIR;i++)
+	{
+		if(mi->i_dir==del_dir_inode[i].inode)
+			break;
+
+	}
+	if(i==MAX_DEL_DIR)
+		goto done;
+
+	del_del_file(inode,i);
+	mi->i_flag=0;
+	mi->i_dir=NULL;
+
+	done:
+#endif
 	call_rcu(&inode->i_rcu, fat_i_callback);
 }
 
@@ -536,6 +577,10 @@ static void init_once(void *foo)
 	INIT_LIST_HEAD(&ei->cache_lru);
 	INIT_HLIST_NODE(&ei->i_fat_hash);
 	inode_init_once(&ei->vfs_inode);
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	ei->i_flag = 0;
+	ei->i_dir = NULL;
+#endif
 }
 
 static int __init fat_init_inodecache(void)
@@ -992,7 +1037,11 @@ static int parse_options(char *options, int is_vfat, int silent, int *debug,
 	opts->codepage = fat_default_codepage;
 	opts->iocharset = fat_default_iocharset;
 	if (is_vfat) {
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+		opts->shortname = VFAT_SFN_DISPLAY_WINNT|VFAT_SFN_CREATE_WINNT;
+#else
 		opts->shortname = VFAT_SFN_DISPLAY_WINNT|VFAT_SFN_CREATE_WIN95;
+#endif
 		opts->rodir = 0;
 	} else {
 		opts->shortname = 0;
@@ -1244,6 +1293,7 @@ int fat_fill_super(struct super_block *sb, void *data, int silent,
 	struct inode *root_inode = NULL, *fat_inode = NULL;
 	struct buffer_head *bh;
 	struct fat_boot_sector *b;
+	struct fat_boot_bsx *bsx;
 	struct msdos_sb_info *sbi;
 	u16 logical_sector_size;
 	u32 total_sectors, total_clusters, fat_clusters, rootdir_sectors;
@@ -1390,6 +1440,8 @@ int fat_fill_super(struct super_block *sb, void *data, int silent,
 			goto out_fail;
 		}
 
+		bsx = (struct fat_boot_bsx *)(bh->b_data + FAT32_BSX_OFFSET);
+
 		fsinfo = (struct fat_boot_fsinfo *)fsinfo_bh->b_data;
 		if (!IS_FSINFO(fsinfo)) {
 			printk(KERN_WARNING "FAT: Invalid FSINFO signature: "
@@ -1405,7 +1457,13 @@ int fat_fill_super(struct super_block *sb, void *data, int silent,
 		}
 
 		brelse(fsinfo_bh);
+	} else {
+		bsx = (struct fat_boot_bsx *)(bh->b_data + FAT16_BSX_OFFSET);
 	}
+
+	/* interpret volume ID as a little endian 32 bit integer */
+	sbi->vol_id = (((u32)bsx->vol_id[0]) | ((u32)bsx->vol_id[1] << 8) |
+		((u32)bsx->vol_id[2] << 16) | ((u32)bsx->vol_id[3] << 24));
 
 	sbi->dir_per_block = sb->s_blocksize / sizeof(struct msdos_dir_entry);
 	sbi->dir_per_block_bits = ffs(sbi->dir_per_block) - 1;
@@ -1580,10 +1638,185 @@ int fat_flush_inodes(struct super_block *sb, struct inode *i1, struct inode *i2)
 }
 EXPORT_SYMBOL_GPL(fat_flush_inodes);
 
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+/******************add for fast del dir**********************************************/
+
+static struct fast_del_file *fat_dir_alloc_inode()
+{
+	struct fast_del_file *cache;
+	cache = kmem_cache_alloc(fat_dir_inode_cachep, GFP_KERNEL);
+	if (!cache)
+		printk("fat_dir_alloc_inode error\n");
+	return cache;
+}
+
+static void fat_dir_destroy_inode(struct fast_del_file *cache)
+{
+	kmem_cache_free(fat_dir_inode_cachep, cache);
+}
+
+
+static int __init fat_init_dir_inodecache(void)
+{
+	fat_dir_inode_cachep = kmem_cache_create("fat_dir_inode_cache",
+					     sizeof(struct fast_del_file),
+					     0, (SLAB_RECLAIM_ACCOUNT|
+						SLAB_MEM_SPREAD),
+					     NULL);
+	if (fat_dir_inode_cachep == NULL)
+		return -ENOMEM;
+	return 0;
+}
+
+static void __exit fat_destroy_dir_inodecache(void)
+{
+	kmem_cache_destroy(fat_dir_inode_cachep);
+}
+
+
+int  is_dir_support_del(struct inode *dir)
+{
+	int i;
+	for(i=0;i<MAX_DEL_DIR;i++)
+	{
+		if(dir==del_dir_inode[i].inode)
+			return i;
+
+	}
+	return -1;
+}
+
+
+int del_file_inode_in_dir(struct inode *dir)
+{
+
+	int num;
+	struct fast_del_file *cache;
+	struct fast_del_file *cache2=NULL;
+	struct list_head *item;
+	struct msdos_inode_info *mi;
+
+
+	int count=0;
+	for(num=0;num<MAX_DEL_DIR;num++)
+	{
+		if(dir==del_dir_inode[num].inode)
+			break;
+
+	}
+	if(num==MAX_DEL_DIR)
+		return -1;
+
+	list_for_each(item, &del_dir_inode[num].file_cache) {
+		cache=list_entry(item, struct fast_del_file, file);
+		mi=MSDOS_I(cache->inode);
+		mi->i_flag=0;
+		fat_detach(cache->inode);
+		//iput(cache->inode);
+		atomic_inc(&cache->inode->i_count);
+		clear_nlink(cache->inode);
+		iput(cache->inode);
+		if(cache2!=NULL){
+			fat_dir_destroy_inode(cache2);
+			list_del(&cache2->file);
+		}
+		cache2=cache;
+		count++;
+	}
+
+	if(count>0)
+	{
+		fat_dir_destroy_inode(cache2);
+		list_del(&cache2->file);
+	}
+	return 0;
+}
+
+
+
+void add_del_file(struct inode *inode,struct inode *dir, int num)
+{
+	struct fast_del_file *cache;
+	struct list_head *item;
+	list_for_each(item, &del_dir_inode[num].file_cache) {
+		cache=list_entry(item, struct fast_del_file, file);
+		if(cache->inode==inode)
+		{
+			return;
+		}
+	}
+	MSDOS_I(inode)->i_flag=1;
+	MSDOS_I(inode)->i_dir=dir;
+	cache=fat_dir_alloc_inode();
+	cache->inode=inode;
+	list_add(&cache->file, &del_dir_inode[num].file_cache);
+}
+
+void del_del_file(struct inode *inode, int num)
+{
+
+	struct fast_del_file *cache;
+	struct list_head *item;
+	list_for_each(item, &del_dir_inode[num].file_cache) {
+		cache=list_entry(item, struct fast_del_file, file);
+		if(cache->inode==inode)
+		{
+			list_del(item);
+			goto done;
+
+		}
+	}
+done:
+	if(item!=&del_dir_inode[num].file_cache)
+		fat_dir_destroy_inode(cache);
+}
+
+
+int mark_del_dir(struct inode *inode)
+{
+	int i;
+	for(i=0;i<MAX_DEL_DIR;i++)
+	{
+		if(NULL==del_dir_inode[i].inode)
+			break;
+
+	}
+	if(i==MAX_DEL_DIR)
+		return -1;
+	del_dir_inode[i].inode=inode;
+	return 0;
+}
+
+
+int del_del_dir(struct inode *inode)
+{
+	int i;
+	for(i=0;i<MAX_DEL_DIR;i++)
+	{
+		if(inode==del_dir_inode[i].inode)
+			break;
+
+	}
+
+	if(i==MAX_DEL_DIR)
+		return -1;
+	del_dir_inode[i].inode=NULL;
+	return 0;
+}
+#endif
+
 static int __init init_fat_fs(void)
 {
 	int err;
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	int i;
 
+	for(i=0;i<MAX_DEL_DIR;i++)
+	{
+		del_dir_inode[i].inode=NULL;
+		INIT_LIST_HEAD(&del_dir_inode[i].file_cache);
+	}
+#endif
 	err = fat_cache_init();
 	if (err)
 		return err;
@@ -1591,7 +1824,11 @@ static int __init init_fat_fs(void)
 	err = fat_init_inodecache();
 	if (err)
 		goto failed;
-
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	err = fat_init_dir_inodecache();
+	if (err)
+		goto failed;
+#endif
 	return 0;
 
 failed:
@@ -1603,6 +1840,9 @@ static void __exit exit_fat_fs(void)
 {
 	fat_cache_destroy();
 	fat_destroy_inodecache();
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	fat_destroy_dir_inodecache();
+#endif
 }
 
 module_init(init_fat_fs)

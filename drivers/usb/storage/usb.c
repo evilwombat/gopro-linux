@@ -121,7 +121,7 @@ MODULE_PARM_DESC(quirks, "supplemental list of device IDs and their quirks");
 }
 
 static struct us_unusual_dev us_unusual_dev_list[] = {
-#	include "unusual_devs.h" 
+#	include "unusual_devs.h"
 	{ }		/* Terminating entry */
 };
 
@@ -239,7 +239,7 @@ void fill_inquiry_response(struct us_data *us, unsigned char *data,
 			      to this logical unit") and leave vendor and
 			      product identification empty. ("If the target
 			      does store some of the INQUIRY data on the
-			      device, it may return zeros or ASCII spaces 
+			      device, it may return zeros or ASCII spaces
 			      (20h) in those fields until the data is
 			      available from the device."). */
 	} else {
@@ -295,7 +295,7 @@ static int usb_stor_control_thread(void * __us)
 
 		scsi_unlock(host);
 
-		/* reject the command if the direction indicator 
+		/* reject the command if the direction indicator
 		 * is UNKNOWN
 		 */
 		if (us->srb->sc_data_direction == DMA_BIDIRECTIONAL) {
@@ -306,7 +306,7 @@ static int usb_stor_control_thread(void * __us)
 		/* reject if target != 0 or if LUN is higher than
 		 * the maximum known LUN
 		 */
-		else if (us->srb->device->id && 
+		else if (us->srb->device->id &&
 				!(us->fflags & US_FL_SCM_MULT_TARG)) {
 			US_DEBUGP("Bad target number (%d:%d)\n",
 				  us->srb->device->id, us->srb->device->lun);
@@ -319,7 +319,7 @@ static int usb_stor_control_thread(void * __us)
 			us->srb->result = DID_BAD_TARGET << 16;
 		}
 
-		/* Handle those devices which need us to fake 
+		/* Handle those devices which need us to fake
 		 * their inquiry data */
 		else if ((us->srb->cmnd[0] == INQUIRY) &&
 			    (us->fflags & US_FL_FIX_INQUIRY)) {
@@ -344,7 +344,7 @@ static int usb_stor_control_thread(void * __us)
 
 		/* indicate that the command is done */
 		if (us->srb->result != DID_ABORT << 16) {
-			US_DEBUGP("scsi cmd done, result=0x%x\n", 
+			US_DEBUGP("scsi cmd done, result=0x%x\n",
 				   us->srb->result);
 			us->srb->scsi_done(us->srb);
 		} else {
@@ -382,7 +382,7 @@ SkipForAbort:
 	}
 	__set_current_state(TASK_RUNNING);
 	return 0;
-}	
+}
 
 /***********************************************************************
  * Device probing and disconnecting
@@ -439,7 +439,9 @@ static void adjust_quirks(struct us_data *us)
 			US_FL_CAPACITY_HEURISTICS | US_FL_IGNORE_DEVICE |
 			US_FL_NOT_LOCKABLE | US_FL_MAX_SECTORS_64 |
 			US_FL_CAPACITY_OK | US_FL_IGNORE_RESIDUE |
-			US_FL_SINGLE_LUN | US_FL_NO_WP_DETECT);
+			US_FL_SINGLE_LUN | US_FL_NO_WP_DETECT |
+			US_FL_NO_READ_DISC_INFO | US_FL_NO_READ_CAPACITY_16 |
+			US_FL_INITIAL_READ10);
 
 	p = quirks;
 	while (*p) {
@@ -482,6 +484,9 @@ static void adjust_quirks(struct us_data *us)
 			break;
 		case 'm':
 			f |= US_FL_MAX_SECTORS_64;
+			break;
+		case 'n':
+			f |= US_FL_INITIAL_READ10;
 			break;
 		case 'o':
 			f |= US_FL_CAPACITY_OK;
@@ -689,7 +694,7 @@ static int get_pipes(struct us_data *us)
 	us->recv_ctrl_pipe = usb_rcvctrlpipe(us->pusb_dev, 0);
 	us->send_bulk_pipe = usb_sndbulkpipe(us->pusb_dev,
 		usb_endpoint_num(ep_out));
-	us->recv_bulk_pipe = usb_rcvbulkpipe(us->pusb_dev, 
+	us->recv_bulk_pipe = usb_rcvbulkpipe(us->pusb_dev,
 		usb_endpoint_num(ep_in));
 	if (ep_int) {
 		us->recv_intr_pipe = usb_rcvintpipe(us->pusb_dev,
@@ -945,6 +950,13 @@ int usb_stor_probe2(struct us_data *us)
 	result = get_pipes(us);
 	if (result)
 		goto BadDevice;
+
+	/*
+	 * If the device returns invalid data for the first READ(10)
+	 * command, indicate the command should be retried.
+	 */
+	if (us->fflags & US_FL_INITIAL_READ10)
+		set_bit(US_FLIDX_REDO_READ10, &us->dflags);
 
 	/* Acquire all the other resources and add the host */
 	result = usb_stor_acquire_resources(us);

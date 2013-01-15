@@ -11,6 +11,24 @@ menuconfig INPUT_TOUCHSCREEN
 
 if INPUT_TOUCHSCREEN
 
+comment "Touchscreen Features"
+
+config SINGLE_TOUCH_ONLY
+        bool "Single Touch Only"
+        help
+          Say Y here if you want to support single touch only.
+
+          If unsure, say N.
+
+config DEBUG_TOUCHSCREEN
+        bool "Print Debug Information"
+        help
+          Say Y here if you want to debug touchscreens.
+
+          If unsure, say N.
+
+comment "Touchscreen Models"
+
 config TOUCHSCREEN_88PM860X
 	tristate "Marvell 88PM860x touchscreen"
 	depends on MFD_88PM860X
@@ -371,6 +389,12 @@ config TOUCHSCREEN_TNETV107X
 	  To compile this driver as a module, choose M here: the
 	  module will be called tnetv107x-ts.
 
+config TOUCHSCREEN_SYNAPTICS_I2C_RMI
+	tristate "Synaptics i2c touchscreen"
+	depends on I2C
+	help
+	  This enables support for Synaptics RMI over I2C based touchscreens.
+
 config TOUCHSCREEN_TOUCHRIGHT
 	tristate "Touchright serial touchscreen"
 	select SERIO
@@ -640,6 +664,94 @@ config TOUCHSCREEN_TSC2007
 	  To compile this driver as a module, choose M here: the
 	  module will be called tsc2007.
 
+config TOUCHSCREEN_AK4183
+        tristate "AK4183 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a AK4183 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called ak4183.
+
+config TOUCHSCREEN_CY8CTMG
+        tristate "CY8CTMG based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a CY8CTMG based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called cy8ctmg.
+
+config TOUCHSCREEN_CHACHA_MT4D
+        tristate "CHACHA_MT4D based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a CHACHA_MT4D based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called chacha_mt4d.
+
+config TOUCHSCREEN_TM1510
+        tristate "TM1510 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a TM1510 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called tm1510.
+
+config TOUCHSCREEN_TM1726
+        tristate "TM1726 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a TM1726 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called tm1726.
+
+config TOUCHSCREEN_TM1927
+        tristate "TM1927 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a TM1927 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called tm1927.
+
+config TOUCHSCREEN_NT11001
+        tristate "NT11001 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a NT11001 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called nt11001.
+
+config TOUCHSCREEN_FT540
+        tristate "FT540 based touchscreens"
+        depends on I2C
+        help
+          Say Y here if you have a FT540 based touchscreen.
+
+          If unsure, say N.
+
+          To compile this driver as a module, choose M here: the
+          module will be called ft540.
+
 config TOUCHSCREEN_W90X900
 	tristate "W90P910 touchscreen driver"
 	depends on HAVE_CLK
@@ -692,5 +804,11 @@ config TOUCHSCREEN_TPS6507X
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called tps6507x_ts.
+
+config TOUCHSCREEN_AMBA_VTOUCH
+	tristate "Ambarella vitrual touchscreens"
+	default n
+	help
+	  Say Y here if you have a Ambarella based touchscreen.
 
 endif

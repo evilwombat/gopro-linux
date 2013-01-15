@@ -64,6 +64,23 @@ config IXP4XX_ETH
 	  Say Y here if you want to use built-in Ethernet ports
 	  on IXP4xx processor.
 
+config AMBARELLA_ETH
+	tristate "Ambarella 10/100/1000 GMAC Ethernet support"
+	depends on PLAT_AMBARELLA
+	select CRC32
+	select PHYLIB
+	select MII
+	help
+	  This driver supports Ambarella 10/100/1000 GMAC Ethernet.
+
+config AMBARELLA_ETH_SUPPORT_IPC
+	bool "Ambarella Media Soc Ethernet with IPC support"
+	depends on AMBARELLA_ETH
+	default n
+	help
+	  Support Checksum Offload Engine.
+	  If unsure, say N.
+
 config W90P910_ETH
 	tristate "Nuvoton w90p910 Ethernet support"
 	depends on ARM && ARCH_W90X900

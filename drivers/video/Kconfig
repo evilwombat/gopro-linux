@@ -2323,6 +2323,46 @@ config FB_PRE_INIT_FB
 	  Select this option if display contents should be inherited as set by
 	  the bootloader.
 
+config FB_AMBARELLA
+	tristate "Ambarella Framebuffer support"
+	depends on FB && PLAT_AMBARELLA
+	select FB_SYS_FILLRECT
+	select FB_SYS_COPYAREA
+	select FB_SYS_IMAGEBLIT
+	select FB_SYS_FOPS
+	help
+          Frame buffer driver for Ambarella chips.
+
+config FB_NOT_USE_UITRON_VOUT
+	bool "Not use remote vout control"
+	depends on FB_AMBARELLA
+	default n
+	help
+          Say y if you use local vout control.
+
+#
+# The "FB AMBARELA type" choice list is ordered alphabetically by option
+# text.  
+#
+          
+choice
+	prompt "FB AMBARELA type"
+	depends on FB_AMBARELLA && !FB_NOT_USE_UITRON_VOUT
+	default FB_MW_CMD
+	
+
+config FB_DSP_CMD
+	bool "Use DSP CMD for FB"
+	help
+	  This enables support for FB based on DSP cmd
+
+config FB_MW_CMD
+	bool "Use MW CMD for FB"
+	help
+	  This enables support for FB based on MW cmd
+	  
+endchoice
+
 config FB_MSM
 	tristate "MSM Framebuffer support"
 	depends on FB && ARCH_MSM

@@ -100,7 +100,9 @@ ENTRY(stext)
 #ifdef CONFIG_SMP_ON_UP
 	bl	__fixup_smp
 #endif
+#ifndef CONFIG_BOSS_SINGLE_CORE
 	bl	__create_page_tables
+#endif
 
 	/*
 	 * The following calls CPU specific code in a position independent
@@ -115,7 +117,12 @@ ENTRY(stext)
  ARM(	add	pc, r10, #PROCINFO_INITFUNC	)
  THUMB(	add	r12, r10, #PROCINFO_INITFUNC	)
  THUMB(	mov	pc, r12				)
-1:	b	__enable_mmu
+1:
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	mov	pc, r13
+#else
+	b	__enable_mmu
+#endif
 ENDPROC(stext)
 	.ltorg
 

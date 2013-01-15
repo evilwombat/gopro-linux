@@ -1,0 +1,54 @@
+#
+# Makefile for IPC programs
+#
+#
+
+LIB_NAME	= lib.a
+LIB_FILE	= $(src)/$(LIB_NAME)
+
+ifeq ($(CONFIG_AMBARELLA_IPC_HAS_SRC),y)
+
+include drivers/ambarella-ipc/ipcdef.mk
+include $(AMBARELLA_IPCDEF)/aipchelper.mk
+
+OBJS		:= $(patsubst %.x,server/%_server.o,$(X-S-y))
+OBJS		+= $(patsubst %.x,client/%_client.o,$(X-C-y))
+CLNT_C-O	:= $(patsubst %.x,ipcgen/%_clnt.o,$(X-C-y))
+
+IMPLEMENT_SRCS	:= $(patsubst %.o,$(src)/%.c,$(OBJS))
+$(IMPLEMENT_SRCS): $(IPCGEN_FILES)
+
+always		= $(LIB_NAME) $(LIB_NAME).bak
+
+obj-y		:= ipc.o irq.o mem.o binder.o ipc_bh.o errstr.o nl.o ipc_shm.o ipc_slock.o ipc_mutex.o ipc_log.o
+obj-y		+= server/lkvfs_bh.o
+obj-y		+= $(OBJS)
+obj-y		+= $(CLNT_C-O)
+
+IPC_LIB_ENTRY	= $(src)/ipc_lib.c
+LIB_OBJS	= $(obj-y)
+LIB_INITS	= $(shell grep -o 'AMBARELLA_IPC_INIT(.*);' $(IMPLEMENT_SRCS) | sed 's/^.*AMBARELLA_IPC_INIT(\(.*\));.*$$/\1/')
+
+$(LIB_FILE): $(patsubst %,$(obj)/%,$(obj-y))
+	rm -f $@ && $(AR) rcs $@ $(LIB_OBJS)
+	rm -f $(IPC_LIB_ENTRY)
+	printf "#include <linux/init.h>\n#include <linux/module.h>\n\n" >> $(IPC_LIB_ENTRY)
+	for f in $(LIB_INITS); do printf "extern int aipc_init_$$f(void);\n"; done >> $(IPC_LIB_ENTRY)
+	printf "\nstatic int __init ipc_lib_init(void)\n{" >> $(IPC_LIB_ENTRY)
+	for f in $(LIB_INITS); do printf "\taipc_init_$$f();\n"; done >> $(IPC_LIB_ENTRY)
+	printf "\treturn 0;\n" >> $(IPC_LIB_ENTRY)
+	printf "}\n\nmodule_init(ipc_lib_init);" >> $(IPC_LIB_ENTRY)
+
+$(LIB_FILE).bak: $(LIB_FILE)
+	cp $(LIB_FILE) $(LIB_FILE).bak
+else
+
+always		= $(LIB_NAME)
+obj-y		:= ipc_lib.o
+
+$(LIB_FILE):
+	cp $(LIB_FILE).bak $(LIB_FILE)
+endif
+
+ccflags-y	+= -I$(src)
+clean-dirs	+= ipcgen/

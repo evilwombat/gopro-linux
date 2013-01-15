@@ -62,6 +62,24 @@ config INPUT_AD714X_SPI
 	  To compile this driver as a module, choose M here: the
 	  module will be called ad714x-spi.
 
+config INPUT_AMBARELLA
+	tristate "Ambarella Input"
+	depends on PLAT_AMBARELLA
+	default n
+	help
+	  Ambarella general input. It can support Virtual input from proc,
+	  IR, ADC and GPIO. ambvi is default, GPIO, IR and ADC need config.
+
+config INPUT_AMBARELLA_IR
+	bool "Support Ambarella Soc IR"
+	depends on INPUT_AMBARELLA
+	default n
+
+config INPUT_AMBARELLA_ADC
+	bool "Support Ambarella Soc ADC"
+	depends on INPUT_AMBARELLA
+	default n
+
 config INPUT_PCSPKR
 	tristate "PC Speaker support"
 	depends on PCSPKR_PLATFORM
@@ -193,6 +211,17 @@ config INPUT_ATI_REMOTE2
 	  To compile this driver as a module, choose M here: the module will be
 	  called ati_remote2.
 
+config INPUT_KEYCHORD
+	tristate "Key chord input driver support"
+	help
+	  Say Y here if you want to enable the key chord driver
+	  accessible at /dev/keychord.  This driver can be used
+	  for receiving notifications when client specified key
+	  combinations are pressed.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called keychord.
+
 config INPUT_KEYSPAN_REMOTE
 	tristate "Keyspan DMR USB remote control (EXPERIMENTAL)"
 	depends on EXPERIMENTAL
@@ -293,6 +322,11 @@ config INPUT_SGI_BTNS
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called sgi_btns.
+
+config INPUT_GPIO
+	tristate "GPIO driver support"
+	help
+	  Say Y here if you want to support gpio based keys, wheels etc...
 
 config HP_SDC_RTC
 	tristate "HP SDC Real Time Clock"
@@ -453,5 +487,12 @@ config INPUT_CMA3000_I2C
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called cma3000_d0x_i2c.
+
+config INPUT_AMBA_VBUTTON
+	tristate "Ambarella Virtual Button driver support"
+	default n
+	help
+	  Say Y here if you want to enable the Ambarella Virtual
+	  Button driver.
 
 endif

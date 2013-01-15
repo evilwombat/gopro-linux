@@ -33,6 +33,7 @@
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
 #include <asm/io.h>
+#include <asm/suspend.h>
 
 #include "power.h"
 
@@ -1015,6 +1016,7 @@ copy_data_pages(struct memory_bitmap *copy_bm, struct memory_bitmap *orig_bm)
 {
 	struct zone *zone;
 	unsigned long pfn;
+	unsigned long pfn_dst;
 
 	for_each_populated_zone(zone) {
 		unsigned long max_zone_pfn;
@@ -1031,7 +1033,11 @@ copy_data_pages(struct memory_bitmap *copy_bm, struct memory_bitmap *orig_bm)
 		pfn = memory_bm_next_pfn(orig_bm);
 		if (unlikely(pfn == BM_END_OF_MAP))
 			break;
-		copy_data_page(memory_bm_next_pfn(copy_bm), pfn);
+		pfn_dst = memory_bm_next_pfn(copy_bm);
+		copy_data_page(pfn_dst, pfn);
+#if defined(CONFIG_ARCH_HAS_SWSUSP_WRITE)
+		arch_copy_data_page(pfn_dst, pfn);
+#endif
 	}
 }
 

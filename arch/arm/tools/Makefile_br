@@ -1,0 +1,18 @@
+#
+# linux/arch/arm/tools/Makefile
+#
+# Copyright (C) 2001 Russell King
+#
+
+IPCOUT	= include/generated/ipcgen
+include drivers/ambarella-ipc/ipcdef.mk
+include $(AMBARELLA_IPCDEF)/aipchelper.mk
+
+.PHONY: gen-aipc-headers
+
+gen-aipc-headers: $(IPCGEN_H)
+
+include/generated/mach-types.h: $(src)/gen-mach-types $(src)/mach-types
+	@echo '  Generating $@'
+	@mkdir -p $(dir $@)
+	$(Q)$(AWK) -f $^ > $@ || { rm -f $@; /bin/false; }

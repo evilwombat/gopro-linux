@@ -30,6 +30,17 @@ struct pwm_bl_data {
 					  int brightness);
 };
 
+static bool PWM0_Disable	=	0;
+static bool PWM1_Disable	=	0;
+static bool PWM2_Disable	=	0;
+static bool PWM3_Disable	=	0;
+static bool PWM4_Disable	=	0;
+module_param(PWM0_Disable, bool, 0);
+module_param(PWM1_Disable, bool, 0);
+module_param(PWM2_Disable, bool, 0);
+module_param(PWM3_Disable, bool, 0);
+module_param(PWM4_Disable, bool, 0);
+
 static int pwm_backlight_update_status(struct backlight_device *bl)
 {
 	struct pwm_bl_data *pb = dev_get_drvdata(&bl->dev);
@@ -74,6 +85,10 @@ static int pwm_backlight_probe(struct platform_device *pdev)
 	struct backlight_device *bl;
 	struct pwm_bl_data *pb;
 	int ret;
+	int PWM_Disable[5]={PWM0_Disable,PWM1_Disable,PWM2_Disable,PWM3_Disable,PWM4_Disable};
+
+	if(PWM_Disable[data->pwm_id] ==1)
+		return 0;
 
 	if (!data) {
 		dev_err(&pdev->dev, "failed to find platform data\n");

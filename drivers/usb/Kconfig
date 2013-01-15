@@ -36,6 +36,7 @@ config USB_ARCH_HAS_OHCI
 	default y if PXA27x
 	default y if PXA3xx
 	default y if ARCH_EP93XX
+	default y if PLAT_AMBARELLA_SUPPORT_USB
 	default y if ARCH_AT91
 	default y if ARCH_PNX4008 && I2C
 	default y if MFD_TC6393XB
@@ -58,6 +59,7 @@ config USB_ARCH_HAS_EHCI
 	default y if PPC_83xx
 	default y if PPC_MPC512x
 	default y if SOC_AU1200
+	default y if PLAT_AMBARELLA_SUPPORT_USB
 	default y if ARCH_IXP4XX
 	default y if ARCH_W90X900
 	default y if ARCH_AT91SAM9G45

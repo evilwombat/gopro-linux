@@ -173,8 +173,15 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			   const char *buf, size_t n)
 {
 #ifdef CONFIG_SUSPEND
+#ifdef CONFIG_EARLYSUSPEND
+	suspend_state_t state = PM_SUSPEND_ON;
+#else
 	suspend_state_t state = PM_SUSPEND_STANDBY;
+#endif
 	const char * const *s;
+#endif
+#ifdef CONFIG_WAKELOCK
+	suspend_state_t old_suspend_state = PM_SUSPEND_ON;
 #endif
 	char *p;
 	int len;
@@ -185,8 +192,15 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 	/* First, check if we are requested to hibernate */
 	if (len == 4 && !strncmp(buf, "disk", len)) {
+#ifdef CONFIG_WAKELOCK
+		old_suspend_state = requested_suspend_state;
+		requested_suspend_state = PM_SUSPEND_HIBERNATE;
+#endif
 		error = hibernate();
-  goto Exit;
+#ifdef CONFIG_WAKELOCK
+		requested_suspend_state = old_suspend_state;
+#endif
+		goto Exit;
 	}
 
 #ifdef CONFIG_SUSPEND
@@ -195,10 +209,17 @@ static ssize_t state_store(struct kobject *kobj, struct kobj_attribute *attr,
 			break;
 	}
 	if (state < PM_SUSPEND_MAX && *s)
+#ifdef CONFIG_EARLYSUSPEND
+		if (state == PM_SUSPEND_ON || valid_state(state)) {
+			error = 0;
+			request_suspend_state(state);
+		}
+#else
 		error = enter_state(state);
 #endif
+#endif
 
- Exit:
+Exit:
 	return error ? error : n;
 }
 
@@ -300,6 +321,11 @@ power_attr(pm_trace_dev_match);
 
 #endif /* CONFIG_PM_TRACE */
 
+#ifdef CONFIG_USER_WAKELOCK
+power_attr(wake_lock);
+power_attr(wake_unlock);
+#endif
+
 static struct attribute * g[] = {
 	&state_attr.attr,
 #ifdef CONFIG_PM_TRACE
@@ -311,6 +337,10 @@ static struct attribute * g[] = {
 	&wakeup_count_attr.attr,
 #ifdef CONFIG_PM_DEBUG
 	&pm_test_attr.attr,
+#endif
+#ifdef CONFIG_USER_WAKELOCK
+	&wake_lock_attr.attr,
+	&wake_unlock_attr.attr,
 #endif
 #endif
 	NULL,

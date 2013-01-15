@@ -192,6 +192,11 @@ __dabt_svc:
 	@ restore SPSR and restart the instruction
 	@
 	ldr	r2, [sp, #S_PSR]
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	stmfd	sp!, {r0-r2}
+	boss_vic_update r2, r0, r1
+	ldmfd	sp!, {r0-r2}
+#endif
 	svc_exit r2				@ return from exception
  UNWIND(.fnend		)
 ENDPROC(__dabt_svc)
@@ -223,6 +228,11 @@ __irq_svc:
 #ifdef CONFIG_TRACE_IRQFLAGS
 	tst	r4, #PSR_I_BIT
 	bleq	trace_hardirqs_on
+#endif
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	stmfd	sp!, {r0-r1, r4}
+	boss_vic_update r4, r0, r1
+	ldmfd	sp!, {r0-r1, r4}
 #endif
 	svc_exit r4				@ return from exception
  UNWIND(.fnend		)
@@ -281,7 +291,12 @@ __und_svc:
 	@
 	@ restore SPSR and restart the instruction
 	@
-	ldr	r2, [sp, #S_PSR]		@ Get SVC cpsr
+	ldr	r2, [sp, #S_PSR]
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	stmfd	sp!, {r0-r2}
+	boss_vic_update r2, r0, r1
+	ldmfd	sp!, {r0-r2}
+#endif
 	svc_exit r2				@ return from exception
  UNWIND(.fnend		)
 ENDPROC(__und_svc)
@@ -319,6 +334,11 @@ __pabt_svc:
 	@ restore SPSR and restart the instruction
 	@
 	ldr	r2, [sp, #S_PSR]
+#ifdef CONFIG_BOSS_SINGLE_CORE
+	stmfd	sp!, {r0-r2}
+	boss_vic_update r2, r0, r1
+	ldmfd	sp!, {r0-r2}
+#endif
 	svc_exit r2				@ return from exception
  UNWIND(.fnend		)
 ENDPROC(__pabt_svc)
@@ -491,7 +511,7 @@ __und_usr:
 	blo	__und_usr_unknown
 3:	ldrht	r0, [r4]
 	add	r2, r2, #2			@ r2 is PC + 2, make it PC + 4
-	orr	r0, r0, r5, lsl #16
+	orr    	r0, r0, r5, lsl #16
 #else
 	b	__und_usr_unknown
 #endif

@@ -46,6 +46,8 @@ source "drivers/telephony/Kconfig"
 
 source "drivers/input/Kconfig"
 
+source "drivers/sensor/Kconfig"
+
 source "drivers/char/Kconfig"
 
 source "drivers/i2c/Kconfig"
@@ -92,6 +94,8 @@ source "drivers/leds/Kconfig"
 
 source "drivers/nfc/Kconfig"
 
+source "drivers/switch/Kconfig"
+
 source "drivers/accessibility/Kconfig"
 
 source "drivers/infiniband/Kconfig"
@@ -117,4 +121,9 @@ source "drivers/staging/Kconfig"
 source "drivers/platform/Kconfig"
 
 source "drivers/clk/Kconfig"
+
+source "drivers/ambarella-ipc/Kconfig"
+
+source "drivers/ambarella-ipc2/Kconfig"
+
 endmenu

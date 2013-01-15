@@ -506,6 +506,9 @@ int wm831x_irq_init(struct wm831x *wm831x, int irq)
 	}
 
 	if (!irq) {
+		irq = wm831x->irq;
+	}
+	if (!irq) {
 		dev_warn(wm831x->dev,
 			 "No interrupt specified - functionality limited\n");
 		return 0;

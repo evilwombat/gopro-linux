@@ -72,6 +72,7 @@ obj-$(CONFIG_USB_GADGET)	+= usb/gadget/
 obj-$(CONFIG_SERIO)		+= input/serio/
 obj-$(CONFIG_GAMEPORT)		+= input/gameport/
 obj-$(CONFIG_INPUT)		+= input/
+obj-y			        += sensor/
 obj-$(CONFIG_I2O)		+= message/
 obj-$(CONFIG_RTC_LIB)		+= rtc/
 obj-y				+= i2c/ media/
@@ -96,6 +97,7 @@ obj-$(CONFIG_DMA_ENGINE)	+= dma/
 obj-$(CONFIG_MMC)		+= mmc/
 obj-$(CONFIG_MEMSTICK)		+= memstick/
 obj-$(CONFIG_NEW_LEDS)		+= leds/
+obj-$(CONFIG_SWITCH)		+= switch/
 obj-$(CONFIG_INFINIBAND)	+= infiniband/
 obj-$(CONFIG_SGI_SN)		+= sn/
 obj-y				+= firmware/
@@ -117,3 +119,12 @@ obj-y				+= platform/
 obj-y				+= ieee802154/
 #common clk code
 obj-y				+= clk/
+
+ifndef CONFIG_AMBARELLA_IPC2
+ifeq ($(CONFIG_AMBARELLA_IPC_HAS_SRC),y)
+obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc/
+endif
+else
+obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc2/
+endif
+

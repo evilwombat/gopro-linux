@@ -1,0 +1,511 @@
+#
+# arch/arm/plat-ambarella/Kconfig
+#
+# History:
+#	2010/05/25 - [Anthony Ginger] created file
+#
+# Copyright (C) 2004-2010, Ambarella, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+config PLAT_AMBARELLA
+	bool
+	depends on ARCH_AMBARELLA
+	default y
+	help
+	  Base platform code for any Ambarella device
+
+if PLAT_AMBARELLA
+comment "Ambarella Platform"
+
+config PLAT_AMBARELLA_GENERIC
+	bool
+	default n
+	select GENERIC_GPIO
+	select ARCH_REQUIRE_GPIOLIB
+	select GENERIC_CLOCKEVENTS
+	select ARCH_INLINE_SPIN_TRYLOCK
+	select ARCH_INLINE_SPIN_TRYLOCK_BH
+	select ARCH_INLINE_SPIN_LOCK
+	select ARCH_INLINE_SPIN_LOCK_BH
+	select ARCH_INLINE_SPIN_LOCK_IRQ
+	select ARCH_INLINE_SPIN_LOCK_IRQSAVE
+	select ARCH_INLINE_SPIN_UNLOCK
+	select ARCH_INLINE_SPIN_UNLOCK_BH
+	select ARCH_INLINE_SPIN_UNLOCK_IRQ
+	select ARCH_INLINE_SPIN_UNLOCK_IRQRESTORE
+	select ARCH_INLINE_READ_TRYLOCK
+	select ARCH_INLINE_READ_LOCK
+	select ARCH_INLINE_READ_LOCK_BH
+	select ARCH_INLINE_READ_LOCK_IRQ
+	select ARCH_INLINE_READ_LOCK_IRQSAVE
+	select ARCH_INLINE_READ_UNLOCK
+	select ARCH_INLINE_READ_UNLOCK_BH
+	select ARCH_INLINE_READ_UNLOCK_IRQ
+	select ARCH_INLINE_READ_UNLOCK_IRQRESTORE
+	select ARCH_INLINE_WRITE_TRYLOCK
+	select ARCH_INLINE_WRITE_LOCK
+	select ARCH_INLINE_WRITE_LOCK_BH
+	select ARCH_INLINE_WRITE_LOCK_IRQ
+	select ARCH_INLINE_WRITE_LOCK_IRQSAVE
+	select ARCH_INLINE_WRITE_UNLOCK
+	select ARCH_INLINE_WRITE_UNLOCK_BH
+	select ARCH_INLINE_WRITE_UNLOCK_IRQ
+	select ARCH_INLINE_WRITE_UNLOCK_IRQRESTORE
+	select GENERIC_HARDIRQS_NO_DEPRECATED
+	select HAVE_PWM
+
+config PLAT_AMBARELLA_BOSS
+	bool
+	default n
+	select GENERIC_GPIO
+	select ARCH_REQUIRE_GPIOLIB
+	select ARCH_INLINE_SPIN_TRYLOCK
+	select ARCH_INLINE_SPIN_TRYLOCK_BH
+	select ARCH_INLINE_SPIN_LOCK
+	select ARCH_INLINE_SPIN_LOCK_BH
+	select ARCH_INLINE_SPIN_LOCK_IRQ
+	select ARCH_INLINE_SPIN_LOCK_IRQSAVE
+	select ARCH_INLINE_SPIN_UNLOCK
+	select ARCH_INLINE_SPIN_UNLOCK_BH
+	select ARCH_INLINE_SPIN_UNLOCK_IRQ
+	select ARCH_INLINE_SPIN_UNLOCK_IRQRESTORE
+	select ARCH_INLINE_READ_TRYLOCK
+	select ARCH_INLINE_READ_LOCK
+	select ARCH_INLINE_READ_LOCK_BH
+	select ARCH_INLINE_READ_LOCK_IRQ
+	select ARCH_INLINE_READ_LOCK_IRQSAVE
+	select ARCH_INLINE_READ_UNLOCK
+	select ARCH_INLINE_READ_UNLOCK_BH
+	select ARCH_INLINE_READ_UNLOCK_IRQ
+	select ARCH_INLINE_READ_UNLOCK_IRQRESTORE
+	select ARCH_INLINE_WRITE_TRYLOCK
+	select ARCH_INLINE_WRITE_LOCK
+	select ARCH_INLINE_WRITE_LOCK_BH
+	select ARCH_INLINE_WRITE_LOCK_IRQ
+	select ARCH_INLINE_WRITE_LOCK_IRQSAVE
+	select ARCH_INLINE_WRITE_UNLOCK
+	select ARCH_INLINE_WRITE_UNLOCK_BH
+	select ARCH_INLINE_WRITE_UNLOCK_IRQ
+	select ARCH_INLINE_WRITE_UNLOCK_IRQRESTORE
+	select GENERIC_HARDIRQS_NO_DEPRECATED
+
+config PLAT_AMBARELLA_CORTEX
+	bool
+	default n
+	select ARM_GIC
+
+config PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_HAL
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_GDMA
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_MMAP_NEW
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_MMAP_NEW_CORTEX_EXT
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_USB
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_SATA
+	bool
+	default n
+
+config PLAT_AMBARELLA_DISABLE_8_16_ACCESS
+	bool
+	default n
+
+config PLAT_AMBARELLA_ADD_REGISTER_LOCK
+	bool
+	default n
+
+config PLAT_AMBARELLA_SUPPORT_I2C_MUX
+	bool
+	default n
+
+config PLAT_AMBARELLA_I1
+	bool
+	select PLAT_AMBARELLA_SUPPORT_I2C_MUX
+	select PLAT_AMBARELLA_SUPPORT_MMAP_NEW
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_SUPPORT_USB
+	select PLAT_AMBARELLA_SUPPORT_SATA
+	default n
+
+config PLAT_AMBARELLA_A7L_BOSS
+	bool
+	default n
+
+config PLAT_AMBARELLA_A7L
+	bool
+	default n
+
+choice
+	prompt "Chip REV"
+
+config PLAT_AMBARELLA_A2
+	bool "A2"
+	select CPU_ARM926T
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	help
+	  Say Y here if you are using Ambarella A2.
+
+config PLAT_AMBARELLA_A5S
+	bool "A5S"
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_SUPPORT_GDMA
+	select PLAT_AMBARELLA_SUPPORT_I2C_MUX
+	help
+	  Say Y here if you are using Ambarella A5S.
+
+config PLAT_AMBARELLA_A5S_BOSS
+	bool "A5S BOSS"
+	select CPU_V6
+	select CPU_32v6K
+	select PLAT_AMBARELLA_BOSS
+	select BOSS_SINGLE_CORE
+	select GENERIC_CLOCKEVENTS
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_SUPPORT_GDMA
+	select ARCH_HAS_SWSUSP_WRITE
+	help
+	  Say Y here if you are using Ambarella A5S BOSS.
+
+config PLAT_AMBARELLA_A7
+	bool "A7"
+	select CPU_V6
+	select CPU_32v6K
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_SUPPORT_I2C_MUX
+	help
+	  Say Y here if you are using Ambarella A7.
+
+config PLAT_AMBARELLA_A7_BOSS
+	bool "A7 BOSS"
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_BOSS
+	select BOSS_SINGLE_CORE
+	select GENERIC_CLOCKEVENTS
+	select ARCH_HAS_SWSUSP_WRITE
+	help
+	  Say Y here if you are using Ambarella A7.
+
+config PLAT_AMBARELLA_A7L_EVK
+	bool "A7L EVK"
+	select PLAT_AMBARELLA_A7L
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	help
+	  Say Y here if you are using Ambarella A7L BUB.
+
+config PLAT_AMBARELLA_A7L_BUB_BOSS
+	bool "A7L BUB BOSS"
+	select PLAT_AMBARELLA_A7L_BOSS
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_BOSS
+	select BOSS_SINGLE_CORE
+	select GENERIC_CLOCKEVENTS
+	select ARCH_HAS_SWSUSP_WRITE
+	help
+	  Say Y here if you are using Ambarella A7L BUB.
+
+config PLAT_AMBARELLA_A7L_EVK_BOSS
+	bool "A7L EVK BOSS"
+	select PLAT_AMBARELLA_A7L_BOSS
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_SUPPORT_MMAP_OLD
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_BOSS
+	select BOSS_SINGLE_CORE
+	select GENERIC_CLOCKEVENTS
+	select ARCH_HAS_SWSUSP_WRITE
+	help
+	  Say Y here if you are using Ambarella A7L EVK.
+
+config PLAT_AMBARELLA_I1_ARM11
+	bool "iOne ARM11"
+	select CPU_V6
+	select CPU_32v6K
+	select CPU_USE_DOMAINS
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_I1
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	help
+	  Say Y here if you are using Ambarella I1 ARM11.
+
+config PLAT_AMBARELLA_I1_CORTEX
+	bool "iOne Cortex"
+	select CPU_V7
+	select PLAT_AMBARELLA_GENERIC
+	select PLAT_AMBARELLA_I1
+	select PLAT_AMBARELLA_SUPPORT_MMAP_NEW_CORTEX_EXT
+	select PLAT_AMBARELLA_CORTEX
+	select PLAT_AMBARELLA_DISABLE_8_16_ACCESS
+	select PLAT_AMBARELLA_ADD_REGISTER_LOCK
+	select ARM_ERRATA_742230 if SMP
+	select ARM_ERRATA_742231 if SMP
+	select ARM_ERRATA_743622
+	select ARM_ERRATA_754322
+	select ARM_ERRATA_751472 if SMP
+	select ARM_ERRATA_753970 if CACHE_PL310
+	select PL310_ERRATA_588369 if CACHE_PL310
+	select PL310_ERRATA_727915 if CACHE_PL310
+
+	help
+	  Say Y here if you are using Ambarella I1 Cortex.
+
+config PLAT_AMBARELLA_I1_BOSS
+	bool "iOne BOSS"
+	select CPU_V7
+	select PLAT_AMBARELLA_BOSS
+	select BOSS_MULTIPLE_CORE
+	select GENERIC_CLOCKEVENTS
+	select PLAT_AMBARELLA_I1
+	select PLAT_AMBARELLA_SUPPORT_MMAP_NEW
+	select PLAT_AMBARELLA_SUPPORT_MMAP_NEW_CORTEX_EXT
+	select PLAT_AMBARELLA_CORTEX
+	select PLAT_AMBARELLA_SUPPORT_HW_CRYPTO
+	select PLAT_AMBARELLA_SUPPORT_HAL
+	select PLAT_AMBARELLA_SUPPORT_USB
+	select PLAT_AMBARELLA_SUPPORT_SATA
+	select PLAT_AMBARELLA_DISABLE_8_16_ACCESS
+	select PLAT_AMBARELLA_ADD_REGISTER_LOCK
+	select ARM_ERRATA_742230 if SMP
+	select ARM_ERRATA_742231 if SMP
+	select ARM_ERRATA_743622
+	select ARM_ERRATA_754322
+	select ARM_ERRATA_751472 if SMP
+	select ARM_ERRATA_753970 if CACHE_PL310
+	select PL310_ERRATA_588369 if CACHE_PL310
+	select PL310_ERRATA_727915 if CACHE_PL310
+	select ARCH_HAS_SWSUSP_WRITE
+
+	help
+	  Say Y here if you are using Ambarella I1 BOSS.
+
+endchoice
+
+menu "Generic Platform Configuration"
+depends on PLAT_AMBARELLA_GENERIC || PLAT_AMBARELLA_BOSS
+
+config AMBARELLA_QUICK_INIT
+	bool "Suport quick init"
+	default y
+	help
+	  If you are not sure, say Y here.
+
+config AMBARELLA_RAW_BOOT
+	bool "Raw boot mode"
+	default n
+	depends on !AMBARELLA_QUICK_INIT
+	help
+	  If you are not sure, say N here.
+
+config AMBARELLA_SUPPORT_SPARSEMEM
+	bool "Suport SPARSEMEM"
+	default n
+	select ARCH_SPARSEMEM_ENABLE
+	select SPARSEMEM_STATIC
+	select ARCH_ENABLE_MEMORY_HOTPLUG
+	select ARCH_MEMORY_PROBE
+	help
+	  If you are not sure, say N here.
+
+config AMBARELLA_SUPPORT_CLOCKSOURCE
+	bool "Suport clocksource"
+	default y
+	help
+	  If you are not sure, say Y here.
+
+config AMBARELLA_SUPPORT_BAPI
+	bool "Suport BAPI"
+	default n
+	select ARCH_HAS_SWSUSP_WRITE
+	help
+	  If you are not sure, say N here.
+
+menu "Proc file system support"
+
+config AMBARELLA_GPIO_PROC
+	bool "Ambarella GPIO proc support"
+	default n
+	depends on PROC_FS
+	---help---
+	  Add /proc/ambarella/gpio for Ambarella GPIO access.
+
+	  If you are not sure, say N here.
+
+config AMBARELLA_ADC_PROC
+	bool "Ambarella ADC proc support"
+	default n
+	depends on PROC_FS
+	---help---
+	  Add /proc/ambarella/adc for Ambarella ADC access.
+
+	  If you are not sure, say N here.
+
+config AMBARELLA_PWM_PROC
+	bool "Ambarella PWM proc support"
+	default n
+	depends on PROC_FS
+	---help---
+	  Add /proc/ambarella/pwm for Ambarella PWM access.
+
+	  If you are not sure, say N here.
+
+config AMBARELLA_DMA_PROC
+	bool "Ambarella DMA proc support"
+	default n
+	depends on PROC_FS
+	---help---
+	  Add /proc/ambarella/dma for Ambarella DMA debug.
+
+	  If you are not sure, say N here.
+
+config AMBARELLA_PLL_PROC
+	bool "Ambarella PLL proc support"
+	default n
+	depends on PROC_FS
+	---help---
+	  Add /proc/ambarella/pll for Ambarella PLL access.
+
+	  If you are not sure, say N here.
+
+endmenu
+
+menu "PPM Configuration"
+
+config AMBARELLA_PPM_SIZE
+	hex "PPM SIZE"
+	default 0x00000000
+	help
+	  Specify the size from the start of physical DRAM address to reserve.
+
+config AMBARELLA_ZRELADDR
+	hex "ZRELADDR"
+	default 0x00108000
+	help
+	  Specify the kernel entry point start physical address.
+
+config AMBARELLA_TEXTOFS
+	hex "TEXTOFS"
+	default 0x00108000
+	help
+	  Speicify the relative text offset.
+
+config AMBARELLA_PARAMS_PHYS
+	hex "PARAMS PHYS"
+	default 0x000c0000
+	help
+	  Specify the physical address for kernel parameters.
+
+config AMBARELLA_INITRD_PHYS
+	hex "INITRD PHYS"
+	default 0x00a00000
+	help
+	  Specify the physical address for initrd.
+
+endmenu
+
+config AMBARELLA_TIMER_HZ
+	int "Kernel HZ (jiffies per second)"
+	range 100 1000
+	default 100
+	help
+	  Please test and figure out what you need.
+
+config AMBARELLA_TIMER_HIGHRES
+	bool "High resolution timer wrapper Support"
+	default n
+	depends on HIGH_RES_TIMERS
+	help
+		Add high resolution timer wrapper for non-GPL
+
+config AMBARELLA_EXT_IRQ_NUM
+	int "External IRQ Num"
+	range 0 256
+	default 64
+	help
+	  Depends on your HW design.
+
+config AMBARELLA_EXT_GPIO_NUM
+	int "External GPIO Num"
+	range 0 256
+	default 64
+	help
+	  Depends on your HW design.
+
+endmenu
+
+menu "BOSS Configuration"
+depends on PLAT_AMBARELLA_BOSS
+
+config BOSS_SINGLE_CORE
+	bool
+	default n
+
+config BOSS_MULTIPLE_CORE
+	bool
+	default n
+
+endmenu
+
+endif
+

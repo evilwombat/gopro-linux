@@ -62,6 +62,30 @@ config TEST_POWER
 	help
 	  This driver is used for testing. It's safe to say M here.
 
+config AMBAPMIC_POWER
+	tristate "Ambarella virtual PMIC Power support"
+	help
+	  Say Y here to enable support for the power management virtual driver
+	  provided by Ambarella.
+
+config DISCHARGE_CURVE
+	bool "Discharge curve routine"
+	default y
+	help
+	  Say Y here to enable discharge curve to calculate capacity
+
+config DC_SANYO_18650
+	bool "Discharge curve driver for sanyo 18650 battery"
+	depends on DISCHARGE_CURVE
+	help
+	  Say Y here to enable discharge curve for sanyo 18650 lion battery
+
+config DC_TRUST_FIRE_18650
+	bool "Discharge curve driver for trust fire 18650 battery"
+	depends on DISCHARGE_CURVE
+	help
+	  Say Y here to enable discharge curve for trust fire 18650 lion battery
+
 config BATTERY_DS2760
 	tristate "DS2760 battery driver (HP iPAQ & others)"
 	depends on W1 && W1_SLAVE_DS2760

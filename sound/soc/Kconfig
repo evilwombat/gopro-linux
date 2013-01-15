@@ -39,6 +39,7 @@ config SND_SOC_AC97_BUS
 	bool
 
 # All the supported SoCs
+source "sound/soc/ambarella/Kconfig"
 source "sound/soc/atmel/Kconfig"
 source "sound/soc/au1x/Kconfig"
 source "sound/soc/blackfin/Kconfig"

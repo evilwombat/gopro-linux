@@ -120,6 +120,16 @@ int mmc_app_set_bus_width(struct mmc_card *card, int width)
 	int err;
 	struct mmc_command cmd;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->is_init) {
+		u32 bus = (sdinfo->bus_width == 8) ? MMC_BUS_WIDTH_8:
+			  (sdinfo->bus_width == 4) ? MMC_BUS_WIDTH_4:
+						     MMC_BUS_WIDTH_1;
+		int rval = (width == bus) ? 0: -EINVAL;
+		return rval;
+	}
+#endif
 	BUG_ON(!card);
 	BUG_ON(!card->host);
 
@@ -151,6 +161,14 @@ int mmc_send_app_op_cond(struct mmc_host *host, u32 ocr, u32 *rocr)
 	struct mmc_command cmd;
 	int i, err = 0;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(host);
+	if (sdinfo->from_ipc && sdinfo->is_sdmem) {
+		if (rocr)
+			*rocr = sdinfo->ocr;
+		return 0;
+	}
+#endif
 	BUG_ON(!host);
 
 	memset(&cmd, 0, sizeof(struct mmc_command));
@@ -198,6 +216,13 @@ int mmc_send_if_cond(struct mmc_host *host, u32 ocr)
 	static const u8 test_pattern = 0xAA;
 	u8 result_pattern;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(host);
+	if (sdinfo->from_ipc) {
+		int rval = (sdinfo->hcs) ? 0: -ETIMEDOUT;
+		return rval;
+	}
+#endif
 	/*
 	 * To support SD 2.0 cards, we must always invoke SD_SEND_IF_COND
 	 * before SD_APP_OP_COND. This command will harmlessly fail for
@@ -227,6 +252,14 @@ int mmc_send_relative_addr(struct mmc_host *host, unsigned int *rca)
 	int err;
 	struct mmc_command cmd;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(host);
+	if (sdinfo->from_ipc && sdinfo->is_sdmem) {
+		if (rca)
+			*rca = sdinfo->rca;
+		return 0;
+	}
+#endif
 	BUG_ON(!host);
 	BUG_ON(!rca);
 
@@ -257,6 +290,29 @@ int mmc_app_send_scr(struct mmc_card *card, u32 *scr)
 	BUG_ON(!card->host);
 	BUG_ON(!scr);
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	memset(&mrq, 0, sizeof(struct mmc_request));
+	memset(&cmd, 0, sizeof(struct mmc_command));
+	memset(&data, 0, sizeof(struct mmc_data));
+
+	cmd.data	= &data;
+	cmd.opcode	= SD_APP_SEND_SCR;
+	cmd.flags	= MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_ADTC;
+
+	data.blksz	= 8;
+	data.buf	= scr;
+
+	if (ambarella_sdmmc_cmd_ipc(card->host, &cmd) == 0) {
+		err = cmd.error;
+		if (err == 0) {
+			scr[0] = be32_to_cpu(scr[0]);
+			scr[1] = be32_to_cpu(scr[1]);
+			return 0;
+		}
+	} else {
+		err = mmc_app_cmd(card->host, card);
+	}
+#else
 	/* NOTE: caller guarantees scr is heap-allocated */
 
 	err = mmc_app_cmd(card->host, card);
@@ -266,7 +322,7 @@ int mmc_app_send_scr(struct mmc_card *card, u32 *scr)
 	memset(&mrq, 0, sizeof(struct mmc_request));
 	memset(&cmd, 0, sizeof(struct mmc_command));
 	memset(&data, 0, sizeof(struct mmc_data));
-
+#endif
 	mrq.cmd = &cmd;
 	mrq.data = &data;
 
@@ -305,6 +361,11 @@ int mmc_sd_switch(struct mmc_card *card, int mode, int group,
 	struct mmc_data data;
 	struct scatterlist sg;
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	struct ipc_sdinfo *sdinfo = ambarella_sd_get_sdinfo(card->host);
+	if (sdinfo->from_ipc && sdinfo->is_sdmem)
+		return 0;
+#endif
 	BUG_ON(!card);
 	BUG_ON(!card->host);
 
@@ -358,6 +419,26 @@ int mmc_app_sd_status(struct mmc_card *card, void *ssr)
 	BUG_ON(!card->host);
 	BUG_ON(!ssr);
 
+#if defined(CONFIG_AMBARELLA_IPC) && defined(CONFIG_MMC_AMBARELLA) && !defined(CONFIG_NOT_SHARE_SD_CONTROLLER_WITH_UITRON)
+	memset(&mrq, 0, sizeof(struct mmc_request));
+	memset(&cmd, 0, sizeof(struct mmc_command));
+	memset(&data, 0, sizeof(struct mmc_data));
+
+	cmd.data	= &data;
+	cmd.opcode	= SD_APP_SD_STATUS;
+	cmd.flags	= MMC_RSP_SPI_R2 | MMC_RSP_R1 | MMC_CMD_ADTC;
+
+	data.blksz	= 64;
+	data.buf	= ssr;
+
+	if (ambarella_sdmmc_cmd_ipc(card->host, &cmd) == 0) {
+		return cmd.error;
+	} else {
+		err = mmc_app_cmd(card->host, card);
+		if (err)
+			return err;
+	}
+#else
 	/* NOTE: caller guarantees ssr is heap-allocated */
 
 	err = mmc_app_cmd(card->host, card);
@@ -367,7 +448,7 @@ int mmc_app_sd_status(struct mmc_card *card, void *ssr)
 	memset(&mrq, 0, sizeof(struct mmc_request));
 	memset(&cmd, 0, sizeof(struct mmc_command));
 	memset(&data, 0, sizeof(struct mmc_data));
-
+#endif
 	mrq.cmd = &cmd;
 	mrq.data = &data;
 

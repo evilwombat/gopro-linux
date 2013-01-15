@@ -117,7 +117,7 @@ static int cp_old_stat(struct kstat *stat, struct __old_kernel_stat __user * sta
 {
 	static int warncount = 5;
 	struct __old_kernel_stat tmp;
-	
+
 	if (warncount > 0) {
 		warncount--;
 		printk(KERN_WARNING "VFS: Warning: %s using old stat() call. Recompile your binary.\n",
@@ -142,7 +142,7 @@ static int cp_old_stat(struct kstat *stat, struct __old_kernel_stat __user * sta
 #if BITS_PER_LONG == 32
 	if (stat->size > MAX_NON_LFS)
 		return -EOVERFLOW;
-#endif	
+#endif
 	tmp.st_size = stat->size;
 	tmp.st_atime = stat->atime.tv_sec;
 	tmp.st_mtime = stat->mtime.tv_sec;
@@ -224,7 +224,7 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
 #if BITS_PER_LONG == 32
 	if (stat->size > MAX_NON_LFS)
 		return -EOVERFLOW;
-#endif	
+#endif
 	tmp.st_size = stat->size;
 	tmp.st_atime = stat->atime.tv_sec;
 	tmp.st_mtime = stat->mtime.tv_sec;
@@ -238,6 +238,14 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
 	tmp.st_blksize = stat->blksize;
 	return copy_to_user(statbuf,&tmp,sizeof(tmp)) ? -EFAULT : 0;
 }
+
+#if defined(CONFIG_AMBARELLA_IPC)
+int lk_cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
+{
+	return cp_new_stat(stat, statbuf);
+}
+EXPORT_SYMBOL(lk_cp_new_stat);
+#endif
 
 SYSCALL_DEFINE2(newstat, const char __user *, filename,
 		struct stat __user *, statbuf)
@@ -361,6 +369,14 @@ static long cp_new_stat64(struct kstat *stat, struct stat64 __user *statbuf)
 	tmp.st_blksize = stat->blksize;
 	return copy_to_user(statbuf,&tmp,sizeof(tmp)) ? -EFAULT : 0;
 }
+
+#if defined(CONFIG_AMBARELLA_IPC)
+int lk_cp_new_stat64(struct kstat *stat, struct stat64 __user *statbuf)
+{
+	return cp_new_stat64(stat, statbuf);
+}
+EXPORT_SYMBOL(lk_cp_new_stat64);
+#endif
 
 SYSCALL_DEFINE2(stat64, const char __user *, filename,
 		struct stat64 __user *, statbuf)

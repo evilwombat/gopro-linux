@@ -16,6 +16,7 @@ struct clock_event_device;
  * Setup a per-cpu timer, whether it be a local timer or dummy broadcast
  */
 void percpu_timer_setup(void);
+void percpu_timer_update_rate(u32 timer_rate);
 
 /*
  * Called from assembly, this is the local timer IRQ handler
@@ -45,6 +46,7 @@ int local_timer_ack(void);
  * Setup a local timer interrupt for a CPU.
  */
 void local_timer_setup(struct clock_event_device *);
+void local_timer_update_rate(struct clock_event_device *evt, u32 timer_rate);
 
 #endif
 

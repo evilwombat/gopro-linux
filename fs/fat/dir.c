@@ -753,6 +753,153 @@ static int fat_ioctl_readdir(struct inode *inode, struct file *filp,
 	return ret;
 }
 
+static int fat_ioctl_volume_id(struct inode *dir)
+{
+	struct super_block *sb = dir->i_sb;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+	return sbi->vol_id;
+}
+
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+static void d_del(struct dentry *dentry)
+{
+	struct dentry *parent;
+
+	parent = dentry->d_parent;
+	list_del(&dentry->d_u.d_child);
+	atomic_dec((atomic_t *)&parent->d_count);
+}
+
+int fat_rmdir(struct inode *dir,struct file *filp)
+{
+	struct super_block *sb = dir->i_sb;
+	struct msdos_sb_info *sbi = MSDOS_SB(sb);
+
+	struct dentry *dentry=filp->f_path.dentry;
+	struct buffer_head *bh = NULL;
+	struct msdos_dir_entry *de;
+	struct msdos_dir_entry *de2;
+	wchar_t *unicode = NULL;
+	loff_t cpos = 0;
+
+	/* FIXME: nr_slots doesn't given a initial value. */
+	/* Give nr_slots = 0 and debug it later. */
+	unsigned char  nr_slots = 0;
+	loff_t slot_off = cpos - nr_slots * sizeof(*de);
+	int err=0;
+
+	int free_start=0;
+
+	int skip=2;
+	int num;
+
+	dentry_unhash(dentry);
+
+	d_del(dentry);
+	dentry->d_flags |= DCACHE_DISCONNECTED;
+
+	if((num=is_dir_support_del(dir))>=0)
+		del_file_inode_in_dir(dir);
+
+	while(1) {
+		if (fat_get_entry(dir, &cpos, &bh, &de) == -1)
+			goto EODir;
+parse_record:
+
+		nr_slots = 0;
+		if (de->name[0] == DELETED_FLAG)
+			continue;
+		if (de->attr != ATTR_EXT && (de->attr & ATTR_VOLUME))
+			continue;
+		if (de->attr != ATTR_EXT && IS_FREE(de->name))
+			continue;
+		if (de->attr == ATTR_EXT) {
+			int status = fat_parse_long(dir, &cpos, &bh, &de,
+						    &unicode, &nr_slots);
+			if (status < 0)
+				return status;
+			else if (status == PARSE_INVALID)
+				continue;
+			else if (status == PARSE_NOT_LONGNAME)
+				goto parse_record;
+			else if (status == PARSE_EOF)
+				goto EODir;
+		}
+
+		nr_slots++;
+		de2=de;
+
+		if(skip==0)
+		{
+			free_start = le16_to_cpu(de->start);
+			if (sbi->fat_bits == 32)
+				free_start |= (le16_to_cpu(de->starthi) << 16);
+			if(free_start!=0)
+				fat_free_del_clusters(sb, free_start);
+		}
+		else
+			skip--;
+
+		while (nr_slots && de2 >= (struct msdos_dir_entry *)bh->b_data) {
+			de2->name[0] = DELETED_FLAG;
+			de2--;
+			nr_slots--;
+		}
+		mark_buffer_dirty(bh);
+
+		if (IS_DIRSYNC(dir))
+			err = sync_dirty_buffer(bh);
+		if (err)
+			printk("fat_rmdir sync_dirty_buffer error \n");
+		dir->i_version++;
+
+		if (nr_slots) {
+			//printk("--- Second stage:  \n");
+
+			 int err = 0, orig_slots;
+			struct msdos_dir_entry *de2, *endp;
+
+			while (nr_slots) {
+				bh = NULL;
+				if (fat_get_entry(dir, &slot_off, &bh, &de2) < 0) {
+					err = -EIO;
+					break;
+				}
+				orig_slots = nr_slots;
+				endp = (struct msdos_dir_entry *)(bh->b_data + sb->s_blocksize);
+				while (nr_slots && de2 < endp) {
+					de2->name[0] = DELETED_FLAG;
+					de2++;
+					nr_slots--;
+				}
+				mark_buffer_dirty(bh);
+				if (IS_DIRSYNC(dir))
+					err = sync_dirty_buffer(bh);
+				brelse(bh);
+				if (err)
+					break;
+					/* pos is *next* de's position, so this does `- sizeof(de)' */
+				slot_off += ((orig_slots - nr_slots) * sizeof(*de2)) - sizeof(*de2);
+			}
+
+			if (err) {
+				printk(KERN_WARNING
+				       "FAT: Couldn't remove the long name slots\n");
+			}
+		}
+	}
+
+
+EODir:
+	dir->i_mtime = dir->i_atime = CURRENT_TIME_SEC;
+	if (IS_DIRSYNC(dir))
+		(void)fat_sync_inode(dir);
+	else
+		mark_inode_dirty(dir);
+	return err;
+}
+#endif
+
 static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
 			  unsigned long arg)
 {
@@ -769,6 +916,16 @@ static long fat_dir_ioctl(struct file *filp, unsigned int cmd,
 		short_only = 0;
 		both = 1;
 		break;
+#if defined(CONFIG_FAT_AMBARELLA_IMPROVEMENT)
+	case VFAT_IOCTL_MARK_DIR:
+		mark_del_dir(inode);
+		return 0;
+	case VFAT_IOCTL_DEL_DIR:
+		fat_rmdir(inode,filp);
+		return 0;
+#endif
+	case VFAT_IOCTL_GET_VOLUME_ID:
+		return fat_ioctl_volume_id(inode);
 	default:
 		return fat_generic_ioctl(filp, cmd, arg);
 	}

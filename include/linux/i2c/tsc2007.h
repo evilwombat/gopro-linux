@@ -3,9 +3,21 @@
 
 /* linux/i2c/tsc2007.h */
 
+struct tsc2007_fix_data {
+	u8	x_invert;
+	u8	y_invert;
+	u8	x_rescale;
+	u8	y_rescale;
+	u16	x_min;
+	u16	x_max;
+	u16	y_min;
+	u16	y_max;
+};
+
 struct tsc2007_platform_data {
 	u16	model;				/* 2007. */
 	u16	x_plate_ohms;
+	struct tsc2007_fix_data	fix;
 
 	int	(*get_pendown_state)(void);
 	void	(*clear_penirq)(void);		/* If needed, clear 2nd level

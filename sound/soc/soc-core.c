@@ -435,20 +435,30 @@ static int soc_pcm_apply_symmetry(struct snd_pcm_substream *substream)
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
 	int ret;
 
-	if (codec_dai->driver->symmetric_rates || cpu_dai->driver->symmetric_rates ||
-			rtd->dai_link->symmetric_rates) {
-		dev_dbg(&rtd->dev, "Symmetry forces %dHz rate\n",
-				rtd->rate);
+	if (!codec_dai->driver->symmetric_rates &&
+	    !cpu_dai->driver->symmetric_rates &&
+	    !rtd->dai_link->symmetric_rates)
+		return 0;
 
-		ret = snd_pcm_hw_constraint_minmax(substream->runtime,
-						   SNDRV_PCM_HW_PARAM_RATE,
-						   rtd->rate,
-						   rtd->rate);
-		if (ret < 0) {
-			dev_err(&rtd->dev,
-				"Unable to apply rate symmetry constraint: %d\n", ret);
-			return ret;
-		}
+	/* This can happen if multiple streams are starting simultaneously -
+	 * the second can need to get its constraints before the first has
+	 * picked a rate.  Complain and allow the application to carry on.
+	 */
+	if (!rtd->rate) {
+		dev_warn(&rtd->dev,
+			 "Not enforcing symmetric_rates due to race\n");
+		return 0;
+	}
+
+	dev_dbg(&rtd->dev, "Symmetry forces %dHz rate\n", rtd->rate);
+
+	ret = snd_pcm_hw_constraint_minmax(substream->runtime,
+					   SNDRV_PCM_HW_PARAM_RATE,
+					   rtd->rate, rtd->rate);
+	if (ret < 0) {
+		dev_err(&rtd->dev,
+			"Unable to apply rate symmetry constraint: %d\n", ret);
+		return ret;
 	}
 
 	return 0;
@@ -556,6 +566,7 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 			runtime->hw.rates |= codec_dai_drv->capture.rates;
 	}
 
+	ret = -EINVAL;
 	snd_pcm_limit_hw_rates(runtime);
 	if (!runtime->hw.rates) {
 		printk(KERN_ERR "asoc: %s <-> %s No matching rates\n",
@@ -567,7 +578,8 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 			codec_dai->name, cpu_dai->name);
 		goto config_err;
 	}
-	if (!runtime->hw.channels_min || !runtime->hw.channels_max) {
+	if (!runtime->hw.channels_min || !runtime->hw.channels_max ||
+		runtime->hw.channels_min > runtime->hw.channels_max) {
 		printk(KERN_ERR "asoc: %s <-> %s No matching channels\n",
 				codec_dai->name, cpu_dai->name);
 		goto config_err;

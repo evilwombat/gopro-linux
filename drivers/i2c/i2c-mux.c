@@ -123,7 +123,9 @@ struct i2c_adapter *i2c_add_mux_adapter(struct i2c_adapter *parent,
 	priv->adap.algo = &priv->algo;
 	priv->adap.algo_data = priv;
 	priv->adap.dev.parent = &parent->dev;
-
+#if defined(CONFIG_AMBARELLA_IPC)
+	priv->adap.ipc_mutex_id = parent->ipc_mutex_id;
+#endif
 	if (force_nr) {
 		priv->adap.nr = force_nr;
 		ret = i2c_add_numbered_adapter(&priv->adap);

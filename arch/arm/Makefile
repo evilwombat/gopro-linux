@@ -124,9 +124,12 @@ ifeq ($(CONFIG_ARCH_SA1100),y)
 textofs-$(CONFIG_SA1111) := 0x00208000
 endif
 
+textofs-$(CONFIG_PLAT_AMBARELLA)	:= $(CONFIG_AMBARELLA_TEXTOFS)
+
 # Machine directory name.  This list is sorted alphanumerically
 # by CONFIG_* macro name.
 machine-$(CONFIG_ARCH_AAEC2000)		:= aaec2000
+machine-$(CONFIG_ARCH_AMBARELLA)	:= ambarella
 machine-$(CONFIG_ARCH_AT91)		:= at91
 machine-$(CONFIG_ARCH_BCMRING)		:= bcmring
 machine-$(CONFIG_ARCH_CLPS711X)		:= clps711x
@@ -200,6 +203,7 @@ machine-$(CONFIG_MACH_SPEAR600)		:= spear6xx
 
 # Platform directory name.  This list is sorted alphanumerically
 # by CONFIG_* macro name.
+plat-$(CONFIG_PLAT_AMBARELLA)	:= ambarella
 plat-$(CONFIG_ARCH_MXC)		:= mxc
 plat-$(CONFIG_ARCH_OMAP)	:= omap
 plat-$(CONFIG_ARCH_S3C64XX)	:= samsung
@@ -258,7 +262,14 @@ core-y				+= $(machdirs) $(platdirs)
 
 drivers-$(CONFIG_OPROFILE)      += arch/arm/oprofile/
 
+drivers-$(CONFIG_PM)		+= arch/arm/power/
+
 libs-y				:= arch/arm/lib/ $(libs-y)
+ifndef CONFIG_AMBARELLA_IPC2
+ifndef CONFIG_AMBARELLA_IPC_HAS_SRC
+libs-y				+= drivers/ambarella-ipc/
+endif
+endif
 
 # Default target when executing plain make
 ifeq ($(CONFIG_XIP_KERNEL),y)
@@ -273,6 +284,9 @@ boot := arch/arm/boot
 
 archprepare:
 	$(Q)$(MAKE) $(build)=arch/arm/tools include/generated/mach-types.h
+ifeq ($(CONFIG_AMBARELLA_IPC),y)
+	$(Q)$(MAKE) $(build)=arch/arm/tools gen-aipc-headers
+endif
 
 # Convert bzImage to zImage
 bzImage: zImage

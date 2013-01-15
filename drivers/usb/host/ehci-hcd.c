@@ -679,7 +679,12 @@ static int ehci_run (struct usb_hcd *hcd)
 	hcd->uses_new_polling = 1;
 
 	/* EHCI spec section 4.1 */
-	if ((retval = ehci_reset(ehci)) != 0) {
+	/*
+	 * TDI driver does the ehci_reset in their reset callback.
+	 * Don't reset here, because configuration settings will
+	 * vanish.
+	 */
+	if (!ehci_is_TDI(ehci) && (retval = ehci_reset(ehci)) != 0) {
 		ehci_mem_cleanup(ehci);
 		return retval;
 	}
@@ -1249,6 +1254,11 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_PLAT_SPEAR
 #include "ehci-spear.c"
 #define PLATFORM_DRIVER		spear_ehci_hcd_driver
+#endif
+
+#ifdef CONFIG_PLAT_AMBARELLA_SUPPORT_USB
+#include "ehci-ambarella.c"
+#define	PLATFORM_DRIVER		ehci_hcd_ambarella_driver
 #endif
 
 #ifdef CONFIG_USB_EHCI_MSM

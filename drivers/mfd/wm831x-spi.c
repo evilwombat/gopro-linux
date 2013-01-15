@@ -15,9 +15,11 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/spi/spi.h>
-
+#include <linux/mfd/wm831x/irq.h>
 #include <linux/mfd/wm831x/core.h>
+#include <linux/mfd/wm831x/gpio.h>
 
+#include <linux/swab.h>
 static int wm831x_spi_read_device(struct wm831x *wm831x, unsigned short reg,
 				  int bytes, void *dest)
 {
@@ -54,6 +56,7 @@ static int wm831x_spi_write_device(struct wm831x *wm831x, unsigned short reg,
 	for (r = reg; r < reg + (bytes / 2); r++) {
 		data[0] = r;
 		data[1] = *s++;
+		swab16s(&data[1]);
 
 		ret = spi_write(spi, (char *)&data, sizeof(data));
 		if (ret != 0)
@@ -92,7 +95,7 @@ static int __devinit wm831x_spi_probe(struct spi_device *spi)
 	if (wm831x == NULL)
 		return -ENOMEM;
 
-	spi->bits_per_word = 16;
+	spi->bits_per_word = 32;
 	spi->mode = SPI_MODE_0;
 
 	dev_set_drvdata(&spi->dev, wm831x);
@@ -115,9 +118,24 @@ static int __devexit wm831x_spi_remove(struct spi_device *spi)
 
 static int wm831x_spi_suspend(struct spi_device *spi, pm_message_t m)
 {
+	int ret   = 0;
 	struct wm831x *wm831x = dev_get_drvdata(&spi->dev);
 
+	wm831x_reg_write(wm831x, WM831X_GPIO5_CONTROL,
+					WM831X_GPN_DIR| WM831X_GPN_ENA | WM831X_SLEEP_REQUEST | WM831X_GPN_POL | WM831X_GPIO_PULL_NONE);
+	if (ret != 0)
+		dev_err(wm831x->dev, "Fail to set sleep request with error: %d\n",
+			ret);
+
 	return wm831x_device_suspend(wm831x);
+}
+
+static int wm831x_spi_resume(struct spi_device *spi)
+{
+	struct wm831x *wm831x = dev_get_drvdata(&spi->dev);
+	//enable wm831x irq
+	enable_irq(wm831x->irq);
+	return 0;
 }
 
 static struct spi_driver wm8310_spi_driver = {
@@ -129,6 +147,7 @@ static struct spi_driver wm8310_spi_driver = {
 	.probe		= wm831x_spi_probe,
 	.remove		= __devexit_p(wm831x_spi_remove),
 	.suspend	= wm831x_spi_suspend,
+	.resume = wm831x_spi_resume,
 };
 
 static struct spi_driver wm8311_spi_driver = {

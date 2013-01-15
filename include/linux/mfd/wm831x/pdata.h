@@ -39,6 +39,7 @@ struct wm831x_battery_pdata {
 	int eoc_iterm;      /** End of trickle charge current, in mA */
 	int fast_ilim;      /** Fast charge current limit, in mA */
 	int timeout;        /** Charge cycle timeout, in minutes */
+	int enable_fet;	    /** Enable battery FET circuit */
 };
 
 /**
@@ -127,5 +128,6 @@ struct wm831x_pdata {
 	/** ISINK1 = 0 and so on*/
 	struct regulator_init_data *isink[WM831X_MAX_ISINK];
 };
+
 
 #endif

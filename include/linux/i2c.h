@@ -374,6 +374,9 @@ struct i2c_adapter {
 
 	struct mutex userspace_clients_lock;
 	struct list_head userspace_clients;
+#if defined(CONFIG_AMBARELLA_IPC)
+	int ipc_mutex_id;
+#endif
 };
 #define to_i2c_adapter(d) container_of(d, struct i2c_adapter, dev)
 

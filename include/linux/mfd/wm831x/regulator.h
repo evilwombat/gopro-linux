@@ -374,6 +374,12 @@
 #define WM831X_DC1_SLP_VSEL_MASK                0x007F  /* DC1_SLP_VSEL - [6:0] */
 #define WM831X_DC1_SLP_VSEL_SHIFT                    0  /* DC1_SLP_VSEL - [6:0] */
 #define WM831X_DC1_SLP_VSEL_WIDTH                    7  /* DC1_SLP_VSEL - [6:0] */
+#define WM831X_DCDC1_SLP_SLOT                      0x0001
+
+#define WM831X_DCDC_MODE_FAST    			0
+#define WM831X_DCDC_MODE_NORMAL  		1
+#define WM831X_DCDC_MODE_IDLE    			2
+#define WM831X_DCDC_MODE_STANDBY 		3
 
 /*
  * R16474 (0x405A) - DC1 DVS Control
@@ -458,6 +464,7 @@
 #define WM831X_DC2_SLP_VSEL_MASK                0x007F  /* DC2_SLP_VSEL - [6:0] */
 #define WM831X_DC2_SLP_VSEL_SHIFT                    0  /* DC2_SLP_VSEL - [6:0] */
 #define WM831X_DC2_SLP_VSEL_WIDTH                    7  /* DC2_SLP_VSEL - [6:0] */
+#define WM831X_DCDC2_SLP_SLOT                      0x0003
 
 /*
  * R16479 (0x405F) - DC2 DVS Control
@@ -536,6 +543,7 @@
 #define WM831X_DC3_SLP_VSEL_MASK                0x007F  /* DC3_SLP_VSEL - [6:0] */
 #define WM831X_DC3_SLP_VSEL_SHIFT                    0  /* DC3_SLP_VSEL - [6:0] */
 #define WM831X_DC3_SLP_VSEL_WIDTH                    7  /* DC3_SLP_VSEL - [6:0] */
+#define WM831X_DCDC3_SLP_SLOT                      0x0003
 
 /*
  * R16484 (0x4064) - DC4 Control
@@ -622,7 +630,7 @@
 #define WM831X_LDO1_SLP_VSEL_MASK               0x001F  /* LDO1_SLP_VSEL - [4:0] */
 #define WM831X_LDO1_SLP_VSEL_SHIFT                   0  /* LDO1_SLP_VSEL - [4:0] */
 #define WM831X_LDO1_SLP_VSEL_WIDTH                   5  /* LDO1_SLP_VSEL - [4:0] */
-
+#define WM831X_LDO1_SLP_SLOT				0x0003
 /*
  * R16491 (0x406B) - LDO2 Control
  */
@@ -679,6 +687,7 @@
 #define WM831X_LDO2_SLP_VSEL_MASK               0x001F  /* LDO2_SLP_VSEL - [4:0] */
 #define WM831X_LDO2_SLP_VSEL_SHIFT                   0  /* LDO2_SLP_VSEL - [4:0] */
 #define WM831X_LDO2_SLP_VSEL_WIDTH                   5  /* LDO2_SLP_VSEL - [4:0] */
+#define WM831X_LDO2_SLP_SLOT				0x0001
 
 /*
  * R16494 (0x406E) - LDO3 Control
@@ -736,6 +745,7 @@
 #define WM831X_LDO3_SLP_VSEL_MASK               0x001F  /* LDO3_SLP_VSEL - [4:0] */
 #define WM831X_LDO3_SLP_VSEL_SHIFT                   0  /* LDO3_SLP_VSEL - [4:0] */
 #define WM831X_LDO3_SLP_VSEL_WIDTH                   5  /* LDO3_SLP_VSEL - [4:0] */
+#define WM831X_LDO3_SLP_SLOT				0x0001
 
 /*
  * R16497 (0x4071) - LDO4 Control
@@ -793,6 +803,7 @@
 #define WM831X_LDO4_SLP_VSEL_MASK               0x001F  /* LDO4_SLP_VSEL - [4:0] */
 #define WM831X_LDO4_SLP_VSEL_SHIFT                   0  /* LDO4_SLP_VSEL - [4:0] */
 #define WM831X_LDO4_SLP_VSEL_WIDTH                   5  /* LDO4_SLP_VSEL - [4:0] */
+#define WM831X_LDO4_SLP_SLOT				0x0001
 
 /*
  * R16500 (0x4074) - LDO5 Control
@@ -850,6 +861,7 @@
 #define WM831X_LDO5_SLP_VSEL_MASK               0x001F  /* LDO5_SLP_VSEL - [4:0] */
 #define WM831X_LDO5_SLP_VSEL_SHIFT                   0  /* LDO5_SLP_VSEL - [4:0] */
 #define WM831X_LDO5_SLP_VSEL_WIDTH                   5  /* LDO5_SLP_VSEL - [4:0] */
+#define WM831X_LDO5_SLP_SLOT				0x0003
 
 /*
  * R16503 (0x4077) - LDO6 Control
@@ -907,6 +919,7 @@
 #define WM831X_LDO6_SLP_VSEL_MASK               0x001F  /* LDO6_SLP_VSEL - [4:0] */
 #define WM831X_LDO6_SLP_VSEL_SHIFT                   0  /* LDO6_SLP_VSEL - [4:0] */
 #define WM831X_LDO6_SLP_VSEL_WIDTH                   5  /* LDO6_SLP_VSEL - [4:0] */
+#define WM831X_LDO6_SLP_SLOT				0x0001
 
 /*
  * R16506 (0x407A) - LDO7 Control
@@ -960,7 +973,7 @@
 #define WM831X_LDO7_SLP_VSEL_MASK               0x001F  /* LDO7_SLP_VSEL - [4:0] */
 #define WM831X_LDO7_SLP_VSEL_SHIFT                   0  /* LDO7_SLP_VSEL - [4:0] */
 #define WM831X_LDO7_SLP_VSEL_WIDTH                   5  /* LDO7_SLP_VSEL - [4:0] */
-
+#define WM831X_LDO7_SLP_SLOT				0x0005
 /*
  * R16509 (0x407D) - LDO8 Control
  */
@@ -1013,6 +1026,7 @@
 #define WM831X_LDO8_SLP_VSEL_MASK               0x001F  /* LDO8_SLP_VSEL - [4:0] */
 #define WM831X_LDO8_SLP_VSEL_SHIFT                   0  /* LDO8_SLP_VSEL - [4:0] */
 #define WM831X_LDO8_SLP_VSEL_WIDTH                   5  /* LDO8_SLP_VSEL - [4:0] */
+#define WM831X_LDO8_SLP_SLOT				0x0001
 
 /*
  * R16512 (0x4080) - LDO9 Control
@@ -1066,6 +1080,7 @@
 #define WM831X_LDO9_SLP_VSEL_MASK               0x001F  /* LDO9_SLP_VSEL - [4:0] */
 #define WM831X_LDO9_SLP_VSEL_SHIFT                   0  /* LDO9_SLP_VSEL - [4:0] */
 #define WM831X_LDO9_SLP_VSEL_WIDTH                   5  /* LDO9_SLP_VSEL - [4:0] */
+#define WM831X_LDO9_SLP_SLOT				0x0001
 
 /*
  * R16515 (0x4083) - LDO10 Control
@@ -1119,7 +1134,7 @@
 #define WM831X_LDO10_SLP_VSEL_MASK              0x001F  /* LDO10_SLP_VSEL - [4:0] */
 #define WM831X_LDO10_SLP_VSEL_SHIFT                  0  /* LDO10_SLP_VSEL - [4:0] */
 #define WM831X_LDO10_SLP_VSEL_WIDTH                  5  /* LDO10_SLP_VSEL - [4:0] */
-
+#define WM831X_LDO10_SLP_SLOT					0x0003
 /*
  * R16519 (0x4087) - LDO11 ON Control
  */

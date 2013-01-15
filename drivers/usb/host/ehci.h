@@ -118,6 +118,7 @@ struct ehci_hcd {			/* one per controller */
 	struct timer_list	watchdog;
 	unsigned long		actions;
 	unsigned		stamp;
+	unsigned		periodic_stamp;
 	unsigned		random_frame;
 	unsigned long		next_statechange;
 	ktime_t			last_periodic_enable;
@@ -134,6 +135,7 @@ struct ehci_hcd {			/* one per controller */
 	unsigned		amd_l1_fix:1;
 	unsigned		fs_i_thresh:1;	/* Intel iso scheduling */
 	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
+	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
 
 	/* required for usb32 quirk */
 	#define OHCI_CTRL_HCFS          (3 << 6)
@@ -615,6 +617,13 @@ ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
 #if defined(CONFIG_ARM) && defined(CONFIG_ARCH_IXP4XX)
 #define readl_be(addr)		__raw_readl((__force unsigned *)addr)
 #define writel_be(val, addr)	__raw_writel(val, (__force unsigned *)addr)
+#endif
+
+#if defined(CONFIG_PLAT_AMBARELLA_ADD_REGISTER_LOCK)
+#undef writel
+#undef readl
+#define writel(v, p)		amba_writel(p, v)
+#define readl(p)		amba_readl(p)
 #endif
 
 static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,

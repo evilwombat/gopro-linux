@@ -4,6 +4,28 @@
 
 comment "MMC/SD/SDIO Host Controller Drivers"
 
+config MMC_AMBARELLA
+	tristate "Ambarella Media Processor SD/MMC Host Controller driver"
+	depends on PLAT_AMBARELLA
+	help
+	  This selects the Ambarella Media Processor Multimedia Card
+	  Interface support. If you have an Ambarella Media Processor
+	  platform with a Multimedia Card slot, say Y here.
+
+config NOT_SHARE_SD_CONTROLLER_WITH_UITRON
+	bool "Not share the Ambarella SD controller with uItron"
+	depends on MMC_AMBARELLA
+	depends on AMBARELLA_IPC
+	default n
+	help
+	  Say y if you are runnig TT.
+
+config MMC_BOSS
+	tristate "BOSS SDHC virtual driver"
+	depends on PLAT_AMBARELLA
+	help
+	  BOSS SDHC virtual driver.
+	  
 config MMC_ARMMMCI
 	tristate "ARM AMBA Multimedia Card Interface support"
 	depends on ARM_AMBA

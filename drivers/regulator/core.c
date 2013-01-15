@@ -262,7 +262,49 @@ static ssize_t regulator_uV_show(struct device *dev,
 
 	return ret;
 }
-static DEVICE_ATTR(microvolts, 0444, regulator_uV_show, NULL);
+
+static ssize_t regulator_uV_store(struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	struct regulator_dev *rdev = dev_get_drvdata(dev);
+	ssize_t			status;
+	long		value;
+	int ret;
+	int min_uV, max_uV ;
+
+	mutex_lock(&rdev->mutex);
+	status = strict_strtol(buf, 0, &value);
+	if (status != 0)
+		goto out;
+
+	/* sanity check */
+	if (!rdev->desc->ops->set_voltage &&
+	    !rdev->desc->ops->set_voltage_sel)
+		goto out;
+
+	min_uV = max_uV = value;
+	/* constraints check */
+	ret = regulator_check_voltage(rdev, &min_uV, &max_uV);
+	if (ret < 0)
+		goto out;
+
+	ret = regulator_check_consumers(rdev, &min_uV, &max_uV);
+	if (ret < 0)
+		goto out;
+
+	ret = _regulator_do_set_voltage(rdev, min_uV, max_uV);
+	if (ret < 0)
+		goto out;
+
+out:
+	mutex_unlock(&rdev->mutex);
+
+	return count;
+}
+
+
+static DEVICE_ATTR(microvolts, 0644, regulator_uV_show, regulator_uV_store);
 
 static ssize_t regulator_uA_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -327,7 +369,47 @@ static ssize_t regulator_state_show(struct device *dev,
 
 	return ret;
 }
-static DEVICE_ATTR(state, 0444, regulator_state_show, NULL);
+
+static ssize_t regulator_state_store(struct device *dev,
+	struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	struct regulator_dev *rdev = dev_get_drvdata(dev);
+	ssize_t			status;
+	long		value;
+
+	mutex_lock(&rdev->mutex);
+	status = strict_strtol(buf, 0, &value);
+	if (status != 0)
+		goto out;
+
+	status = -EINVAL;
+	/* sanity check */
+	if (!rdev->desc->ops->enable ||
+	    !rdev->desc->ops->disable)
+		goto out;
+
+	if (value > 0) {
+		if (!_regulator_is_enabled(rdev)) {
+			/* only enable when disabled */
+			status = rdev->desc->ops->enable(rdev);
+		}
+	} else if (value == 0) {
+		if (_regulator_is_enabled(rdev)) {
+			/* only disable when enabled */
+			status = rdev->desc->ops->disable(rdev);
+		}
+	}
+
+out:
+	if (status < 0) {
+		rdev_err(rdev, "state change failed with status(%d)\n", status);
+	}
+	mutex_unlock(&rdev->mutex);
+
+	return count;
+}
+static DEVICE_ATTR(state, 0644, regulator_state_show, regulator_state_store);
 
 static ssize_t regulator_status_show(struct device *dev,
 				   struct device_attribute *attr, char *buf)

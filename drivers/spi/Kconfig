@@ -343,6 +343,12 @@ config SPI_STMP3XXX
 	help
 	  SPI driver for Freescale STMP37xx/378x SoC SSP interface
 
+config SPI_AMBARELLA
+        tristate "Ambarella SPI Controller"
+        depends on PLAT_AMBARELLA
+        help
+          This selects a driver for the Ambarella SPI Controller.
+
 config SPI_TEGRA
 	tristate "Nvidia Tegra SPI controller"
 	depends on ARCH_TEGRA
