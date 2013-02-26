@@ -122,9 +122,9 @@ obj-y				+= clk/
 
 ifndef CONFIG_AMBARELLA_IPC2
 ifeq ($(CONFIG_AMBARELLA_IPC_HAS_SRC),y)
-obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc/
+#obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc/
 endif
 else
-obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc2/
+#obj-$(CONFIG_AMBARELLA_IPC)	+= ambarella-ipc2/
 endif
 

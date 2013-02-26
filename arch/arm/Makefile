@@ -267,7 +267,7 @@ drivers-$(CONFIG_PM)		+= arch/arm/power/
 libs-y				:= arch/arm/lib/ $(libs-y)
 ifndef CONFIG_AMBARELLA_IPC2
 ifndef CONFIG_AMBARELLA_IPC_HAS_SRC
-libs-y				+= drivers/ambarella-ipc/
+#libs-y				+= drivers/ambarella-ipc/
 endif
 endif
 
@@ -285,7 +285,7 @@ boot := arch/arm/boot
 archprepare:
 	$(Q)$(MAKE) $(build)=arch/arm/tools include/generated/mach-types.h
 ifeq ($(CONFIG_AMBARELLA_IPC),y)
-	$(Q)$(MAKE) $(build)=arch/arm/tools gen-aipc-headers
+#	$(Q)$(MAKE) $(build)=arch/arm/tools gen-aipc-headers
 endif
 
 # Convert bzImage to zImage

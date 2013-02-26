@@ -5,8 +5,8 @@
 #
 
 IPCOUT	= include/generated/ipcgen
-include drivers/ambarella-ipc/ipcdef.mk
-include $(AMBARELLA_IPCDEF)/aipchelper.mk
+#include drivers/ambarella-ipc/ipcdef.mk
+#include $(AMBARELLA_IPCDEF)/aipchelper.mk
 
 .PHONY: gen-aipc-headers
 

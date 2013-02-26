@@ -48,7 +48,7 @@
 
 #include <plat/ambcache.h>
 
-#include <generated/ipcgen/i_util.h>
+//#include <generated/ipcgen/i_util.h>
 
 /* ==========================================================================*/
 #ifdef MODULE_PARAM_PREFIX
@@ -274,11 +274,11 @@ static int ambarella_pm_hibernation_begin(void)
 {
 	int					retval = 0;
 
-	if (pm_abcheck_info.aoss_info == NULL) {
+/*	if (pm_abcheck_info.aoss_info == NULL) {
 		pm_abcopy_page = 0;
 		linux_absuspend_check((void *)&pm_abcheck_info);
 	}
-
+*/
 	disable_irq(BOSS_VIRT_H2G_INT_REQ_VEC);
 	disable_irq(BOSS_VIRT_H2G_MTX_VEC);
 
@@ -370,13 +370,13 @@ static struct platform_hibernation_ops ambarella_pm_hibernation_ops = {
 
 int __init ambarella_init_pm(void)
 {
-	pm_power_off = ambarella_power_off;
-	pm_power_off_prepare = ambarella_power_off_prepare;
+//	pm_power_off = ambarella_power_off;
+//	pm_power_off_prepare = ambarella_power_off_prepare;
 
-	suspend_set_ops(&ambarella_pm_suspend_ops);
-	hibernation_set_ops(&ambarella_pm_hibernation_ops);
+//	suspend_set_ops(&ambarella_pm_suspend_ops);
+//	hibernation_set_ops(&ambarella_pm_hibernation_ops);
 
-	pm_abcheck_info.aoss_info = NULL;
+//	pm_abcheck_info.aoss_info = NULL;
 
 	return 0;
 }
@@ -392,7 +392,7 @@ int arch_swsusp_write(unsigned int flags)
 	ambnation_aoss_call_t			pm_abaoss_entry = NULL;
 	u32					pm_abaoss_arg[4];
 	u32					pm_fn_pri;
-
+/*
 	if (pm_abcheck_info.aoss_info) {
 		for (i = 0; i < 4; i++) {
 			pm_abaoss_arg[i] = ambarella_phys_to_virt(
@@ -439,10 +439,10 @@ int arch_swsusp_write(unsigned int flags)
 		in_suspend_ipc_svc = 0;
 		swsusp_arch_restore_cpu();
 	}
-
+*/
 	return retval;
 }
-
+/*
 static int ambernation_increase_page_info(
 	struct ambernation_aoss_info *aoss_info,
 	struct ambernation_page_info *src_page_info)
@@ -491,10 +491,10 @@ static int ambernation_increase_page_info(
 ambernation_increase_page_info_exit:
 	return retval;
 }
-
+*/
 void arch_copy_data_page(unsigned long dst_pfn, unsigned long src_pfn)
 {
-	struct ambernation_page_info		src_page_info;
+/*	struct ambernation_page_info		src_page_info;
 
 	if (pm_abcheck_info.aoss_info) {
 		src_page_info.src = __pfn_to_phys(src_pfn);
@@ -503,5 +503,6 @@ void arch_copy_data_page(unsigned long dst_pfn, unsigned long src_pfn)
 		ambernation_increase_page_info(pm_abcheck_info.aoss_info,
 			&src_page_info);
 	}
+*/
 }
 
