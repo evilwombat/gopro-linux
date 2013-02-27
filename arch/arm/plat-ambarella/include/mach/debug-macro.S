@@ -26,12 +26,11 @@
 
 #include <mach/hardware.h>
 
-.macro	addruart, rx, tmp
-	mrc	p15, 0, \rx, c1, c0
-	tst	\rx, #1			@ MMU enabled?
-	moveq	\rx, #APB_PHYS_BASE	@ physical base address
-	movne	\rx, #APB_BASE		@ virtual address
-	orr	\rx, \rx, #UART_OFFSET
+.macro	addruart, tmp1, tmp2
+	mov	\tmp1, #APB_PHYS_BASE	@ physical base address
+	mov	\tmp2, #APB_BASE	@ virtual address
+	orr	\tmp1, \tmp1, #UART_OFFSET
+	orr	\tmp2, \tmp2, #UART_OFFSET
 .endm
 
 .macro senduart, rd, rx
