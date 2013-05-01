@@ -309,6 +309,16 @@ static void __init ambarella_init_generic(void)
 	}
 #endif
 
+	/* Needed for sdcard */
+	ambarella_gpio_config(83, GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_set(83, 1);
+
+	/* Power button */
+	ambarella_gpio_config(48, GPIO_FUNC_SW_INPUT);
+
+	/* Record button */
+	ambarella_gpio_config(22, GPIO_FUNC_SW_INPUT);
+	ambarella_gpio_config(43, GPIO_FUNC_SW_INPUT);
 }
 
 /* ==========================================================================*/
