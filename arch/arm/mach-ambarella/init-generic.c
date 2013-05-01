@@ -45,6 +45,8 @@
 #include <linux/delay.h>
 
 #include <plat/ambinput.h>
+#include <linux/gpio.h>
+#include <linux/leds.h>
 
 #include "board-device.h"
 
@@ -54,6 +56,36 @@ static struct platform_device ambarella_auc_codec0 = {
 	.id		= -1,
 };
 #endif
+
+
+static struct gpio_led hero2_led_pins[] = {
+        {
+                .name                   = "hero2:front",
+                .default_trigger        = "heartbeat",
+                .gpio                   = 37,
+                .active_low             = 1,
+        },
+        {
+                .name                   = "hero2:top",
+                .default_trigger        = "off",
+                .gpio                   = 46,
+                .active_low             = 0,
+        },
+};
+
+static struct gpio_led_platform_data hero2_led_data = {
+        .leds           = hero2_led_pins,
+        .num_leds       = ARRAY_SIZE(hero2_led_pins),
+};
+
+static struct platform_device hero2_leds = {
+        .name   = "leds-gpio",
+        .id     = -1,
+        .dev    = {
+                .platform_data  = &hero2_led_data,
+        }
+};
+
 
 /* ==========================================================================*/
 static struct platform_device *ambarella_devices[] __initdata = {
@@ -126,6 +158,7 @@ static struct platform_device *ambarella_devices[] __initdata = {
 	&ambarella_wdt0,
 	&ambarella_fsg_device0,
 	&ambarella_usb_device0,
+	&hero2_leds,
 };
 
 /* ==========================================================================*/
