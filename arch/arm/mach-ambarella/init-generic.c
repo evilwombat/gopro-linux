@@ -319,6 +319,13 @@ static void __init ambarella_init_generic(void)
 	/* Record button */
 	ambarella_gpio_config(22, GPIO_FUNC_SW_INPUT);
 	ambarella_gpio_config(43, GPIO_FUNC_SW_INPUT);
+
+	/* SPI0, for front panel LCD */
+        ambarella_gpio_config(SSI0_CLK,  GPIO_FUNC_HW);
+        ambarella_gpio_config(SSI0_MOSI, GPIO_FUNC_HW);
+        ambarella_gpio_config(SSI0_MISO, GPIO_FUNC_HW);
+        ambarella_gpio_config(SSI0_EN0,  GPIO_FUNC_HW);
+        ambarella_gpio_config(SSI0_EN1,  GPIO_FUNC_HW);
 }
 
 /* ==========================================================================*/
