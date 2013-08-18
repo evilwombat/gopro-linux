@@ -2333,6 +2333,18 @@ config FB_AMBARELLA
 	help
           Frame buffer driver for Ambarella chips.
 
+config FB_ST7585
+	tristate "Sitronix ST7585 Framebuffer Support"
+	depends on FB && SPI
+	select FB_SYS_FILLRECT
+	select FB_SYS_COPYAREA
+	select FB_SYS_IMAGEBLIT
+	select FB_SYS_FOPS
+	select FB_DEFERRED_IO
+	help
+          Framebuffer driver for the Sitronix ST7585 SPI LCDs. Currently,
+	  only 3-wire (9-bit) SPI interface mode is supported.
+
 config FB_NOT_USE_UITRON_VOUT
 	bool "Not use remote vout control"
 	depends on FB_AMBARELLA
