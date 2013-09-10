@@ -164,7 +164,7 @@ static struct platform_device *ambarella_devices[] __initdata = {
 /* ==========================================================================*/
 static struct spi_board_info ambarella_spi_devices[] = {
 	{
-		.modalias	= "spidev",
+		.modalias	= "st7585fb",
 		.bus_num	= 0,
 		.chip_select	= 0,
 	},
