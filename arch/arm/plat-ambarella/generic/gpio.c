@@ -497,7 +497,6 @@ int __init ambarella_init_gpio(void)
 	}
 #endif
 
-#if defined(CONFIG_AMBARELLA_RAW_BOOT)
 	amba_writel(GPIO0_AFSEL_REG, 0xFFFFFFFF);
 	amba_writel(GPIO0_DIR_REG, 0x00000000);
 	amba_writel(GPIO0_MASK_REG, 0xFFFFFFFF);
@@ -537,7 +536,6 @@ int __init ambarella_init_gpio(void)
 	amba_writel(GPIO5_MASK_REG, 0xFFFFFFFF);
 	amba_writel(GPIO5_DATA_REG, 0x00000000);
 	amba_writel(GPIO5_ENABLE_REG, 0xFFFFFFFF);
-#endif
 #endif
 
 	return retval;
