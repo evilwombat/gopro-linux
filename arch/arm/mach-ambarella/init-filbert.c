@@ -172,6 +172,61 @@ static void __init ambarella_init_filbert(void)
 
 	ambarella_init_machine("Filbert");
 
+	for (i = 0; i < 160; i++)
+		ambarella_gpio_config(i, GPIO_FUNC_HW);
+
+	/* SPI3, for front panel LCD */
+	ambarella_gpio_config(SSI3_CLK,  GPIO_FUNC_HW);
+	ambarella_gpio_config(SSI3_MOSI, GPIO_FUNC_HW);
+	ambarella_gpio_config(SSI3_MISO, GPIO_FUNC_HW);
+	ambarella_gpio_config(SSI3_EN7,  GPIO_FUNC_SW_OUTPUT);
+
+	/* Display reset? */
+	ambarella_gpio_config(134,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_set(134, 1);
+
+	ambarella_gpio_config(13,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(34,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(38,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(44,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(45,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(104,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(105,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(113,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(129,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(130,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(132,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(39,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(92,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(94,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(102,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(112,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(131,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(134,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(141,  GPIO_FUNC_SW_OUTPUT);
+	ambarella_gpio_config(143,  GPIO_FUNC_SW_OUTPUT);
+	
+	ambarella_gpio_set(13, 0);
+	ambarella_gpio_set(34, 0);
+	ambarella_gpio_set(38, 0);
+	ambarella_gpio_set(44, 0);
+	ambarella_gpio_set(45, 0);
+	ambarella_gpio_set(104, 0);
+	ambarella_gpio_set(105, 0);
+	ambarella_gpio_set(113, 0);
+	ambarella_gpio_set(129, 0);
+	ambarella_gpio_set(130, 0);
+	ambarella_gpio_set(132, 0);
+	ambarella_gpio_set(39, 1);
+	ambarella_gpio_set(92, 1);	
+	ambarella_gpio_set(94, 1);
+	ambarella_gpio_set(102, 1);
+	ambarella_gpio_set(112, 1);
+	ambarella_gpio_set(131, 1);
+	ambarella_gpio_set(134, 1);
+	ambarella_gpio_set(141, 1);
+	ambarella_gpio_set(143, 1);
+
 	platform_add_devices(ambarella_devices, ARRAY_SIZE(ambarella_devices));
 	for (i = 0; i < ARRAY_SIZE(ambarella_devices); i++) {
 		device_set_wakeup_capable(&ambarella_devices[i]->dev, 1);
