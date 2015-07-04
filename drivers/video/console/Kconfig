@@ -204,6 +204,14 @@ config FONT_MINI_4x6
 	bool "Mini 4x6 font"
 	depends on !SPARC && FONTS
 
+config FONT_6x8
+	bool "Classic 6x8 (5x7) LCD font" if FONTS
+	depends on FRAMEBUFFER_CONSOLE
+	help
+	  This is the classic 5x7 font in the style of many common character
+	  LCD modules. It is a decent tradeoff between legibility and efficient
+	  use of screen space. It is crisp and clean. Say Y.
+
 config FONT_SUN8x16
 	bool "Sparc console 8x16 font"
 	depends on FRAMEBUFFER_CONSOLE && (!SPARC && FONTS || SPARC)
