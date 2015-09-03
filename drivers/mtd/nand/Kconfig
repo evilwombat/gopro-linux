@@ -57,6 +57,16 @@ config MTD_NAND_AMBARELLA
 	  This enables the SLC NAND flash controller on the Ambarella
 	  Media SoC.
 
+config MTD_NAND_AMBARELLA_DEFAULT_TIMINGS
+	bool "Use default NAND timings"
+	depends on MTD_NAND_AMBARELLA
+	help
+	  Use conservative NAND timings in an attempt to improve reliability
+	  of NAND access, at the potential expense of NAND performance.
+
+	  If you are having trouble accessing your NAND device, say 'Y' here.
+
+
 config MTD_NAND_AUTCPU12
 	tristate "SmartMediaCard on autronix autcpu12 board"
 	depends on ARCH_AUTCPU12
