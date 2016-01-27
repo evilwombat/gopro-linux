@@ -1543,7 +1543,15 @@ static int __devinit ambarella_nand_probe(struct platform_device *pdev)
 	if (errorCode)
 		goto ambarella_nand_probe_mtd_error;
 
+	amboot_nr_partitions = 0;
+	amboot_partitions =
+		kzalloc((PART_MAX+CMDLINE_PART_MAX)*sizeof(struct mtd_partition),
+		GFP_KERNEL);
+
+	meta_table = kzalloc(sizeof(flpart_meta_t), GFP_KERNEL);
+
 #ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_AMBPTB_PARTITION
 	/* struct  flpart_table_t contains the meta data which contains the
 	  * partition info.
 	  * meta_offpage indicate the offset from each block
@@ -1562,7 +1570,6 @@ static int __devinit ambarella_nand_probe(struct platform_device *pdev)
 	}
 
 	/* find the meta data, start from the second block */
-	meta_table = kzalloc(sizeof(flpart_meta_t), GFP_KERNEL);
 	found = 0;
 	for (from = mtd->erasesize; from < mtd->size; from += mtd->erasesize) {
 		if (mtd->block_isbad(mtd, from)) {
@@ -1595,9 +1602,6 @@ static int __devinit ambarella_nand_probe(struct platform_device *pdev)
 	}
 
 	dev_info(nand_info->dev, "%s: Partition infomation found!\n", __func__);
-	amboot_partitions =
-		kzalloc((PART_MAX+CMDLINE_PART_MAX)*sizeof(struct mtd_partition),
-		GFP_KERNEL);
 
 	/* if this partition isn't located in NAND, fake its nblk to 0, this
 	 * feature start from the second version of flpart_meta_t. */
@@ -1608,7 +1612,6 @@ static int __devinit ambarella_nand_probe(struct platform_device *pdev)
 		}
 	}
 
-	amboot_nr_partitions = 0;
 	found = 0;
 	for (i = 0; i < PART_MAX; i++) {
 #ifdef CONFIG_MTD_NAND_AMBARELLA_ENABLE_FULL_PTB
@@ -1647,6 +1650,7 @@ static int __devinit ambarella_nand_probe(struct platform_device *pdev)
 		amboot_partitions[amboot_nr_partitions].size = meta_table->part_info[i].nblk * mtd->erasesize;
 		amboot_nr_partitions++;
 	}
+#endif
 
 #ifdef CONFIG_MTD_CMDLINE_PARTS
 	nand_info->mtd.name = "ambnand";
