@@ -665,7 +665,9 @@ static int nand_amb_request(struct ambarella_nand_info *nand_info)
 			nand_info->area == SPARE_ECC  ||
 			nand_info->area == MAIN_ECC)
 			fio_ctr_reg |= (FIO_CTR_RS);
-
+#ifdef CONFIG_MTD_NAND_AMBARELLA_SOFT_ECC
+		nand_info->ecc = EC_MDSD;
+#endif
 		switch (nand_info->ecc) {
 		case EC_MDSE:
 			nand_ctr_reg |= NAND_CTR_EC_SPARE;
@@ -708,6 +710,9 @@ static int nand_amb_request(struct ambarella_nand_info *nand_info)
 			nand_info->area == MAIN_ECC)
 			fio_ctr_reg |= (FIO_CTR_RS);
 
+#ifdef CONFIG_MTD_NAND_AMBARELLA_SOFT_ECC
+		nand_info->ecc = EC_MDSD;
+#endif
 		switch (nand_info->ecc) {
 		case EG_MDSE :
 			nand_ctr_reg |= NAND_CTR_EG_SPARE;
@@ -1321,9 +1326,11 @@ static int __devinit ambarella_nand_init_chip(struct ambarella_nand_info *nand_i
 
 	chip->options = NAND_NO_AUTOINCR;
 	if (nand_info->plat_nand->flash_bbt) {
+#ifndef CONFIG_MTD_NAND_AMBARELLA_SOFT_ECC
 		chip->options |= NAND_USE_FLASH_BBT;
 		chip->bbt_td = &bbt_main_descr;
 		chip->bbt_md = &bbt_mirror_descr;
+#endif
 	}
 
 	nand_info->mtd.priv = chip;

@@ -66,6 +66,16 @@ config MTD_NAND_AMBARELLA_DEFAULT_TIMINGS
 
 	  If you are having trouble accessing your NAND device, say 'Y' here.
 
+config MTD_NAND_AMBARELLA_SOFT_ECC
+	bool "Force use of Software ECC"
+	depends on MTD_NAND_AMBARELLA
+	help
+	  Use software-based error correction during NAND access, rather than
+	  using the hardware mechanism.
+
+	  If you are having trouble accessing your NAND device, you can
+	  to say 'Y' here. No promises, though.
+
 
 config MTD_NAND_AUTCPU12
 	tristate "SmartMediaCard on autronix autcpu12 board"
