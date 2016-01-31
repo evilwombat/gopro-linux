@@ -151,7 +151,7 @@ static void st7585fb_deferred_io(struct fb_info *info,
 	
 	for (col = 0; col < 8; col++) {
 		spisend(dd, 0x40 | col);
-		spisend(dd, 0x8e);
+		spisend(dd, 0x8d);
 
 		for (row = 0; row < 75; row++) {
 			t = 0;
@@ -191,10 +191,10 @@ static int __devinit st7585_probe(struct spi_device *spi)
 		return ret;
 
 	spisend(drvdata, 0x21);
-	spisend(drvdata, 0x90);
+	spisend(drvdata, 0x9c);
 	spisend(drvdata, 0x20);
 	spisend(drvdata, 0x0c);
-	spisend(drvdata, 0x8e);
+	spisend(drvdata, 0x8d);
 
 	drvdata->info = framebuffer_alloc(0, &spi->dev);
 	if (!drvdata->info) {
